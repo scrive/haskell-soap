@@ -23,7 +23,8 @@ library
   build-depends:
     base ==4.*,
     http-conduit,
-    xml-conduit
+    xml-conduit,
+    bytestring, text, containers, unordered-containers
 
 executable wsdl2hs
   main-is:           Main.hs

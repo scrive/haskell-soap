@@ -6,7 +6,7 @@ import Network.HTTP.Conduit (simpleHttp)
 import Text.XML
 import Text.XML.Cursor
 import Data.Text (Text)
---import qualified Data.Map.Lazy as ML
+import qualified Data.Text as T
 
 import Data.Maybe
 import System.Environment (getArgs)
@@ -29,10 +29,10 @@ service wsdl = Service name ports
     where
         srv = head $ wsdl $/ laxElement "service"
 
-        name = head $ srv $/ laxAttribute "name"
+        name = head $ srv $| laxAttribute "name"
         ports = map port $ srv $/ laxElement "port"
-        port p = Port { portName    = "" -- head $ p $/ laxAttribute "name"
-                      , portBinding = "" -- head $ p $/ laxAttribute "binding"
+        port p = Port { portName    = head $ p $| laxAttribute "name"
+                      , portBinding = dropNS . head $ p $| laxAttribute "binding"
                       , portAddress = head $ p $// laxAttribute "location"
                       }
 
@@ -46,7 +46,7 @@ data Binding = Binding { bindingName :: Text
 
 data Operation = Operation { operationName :: Text
                            , operationAction :: Text
-                           , operationDocumentation :: Text
+                           , operationDocumentation :: Maybe Text
                            , operationInput :: Text
                            , operationOutput :: Text
                            } deriving (Show)
@@ -54,18 +54,30 @@ data Operation = Operation { operationName :: Text
 bindings :: Cursor -> [Binding]
 bindings wsdl = map binding $ wsdl $/ laxElement "binding"
     where
-        binding b = Binding { bindingName = undefined
-                            , bindingType = undefined
-                            , bindingTransport = undefined
-                            , bindingOperations = map operation $ undefined
+        binding b = Binding { bindingName = bindName b
+                            , bindingType = bindType b
+                            , bindingTransport = head . head $ b $/ laxElement "binding" &| laxAttribute "transport"
+                            , bindingOperations = map (operation $ bindType b) $ b $/ laxElement "operation"
                             }
+        bindName b = head $ b $| laxAttribute "name"
+        bindType b = dropNS . head $ b $| laxAttribute "type"
 
-        operation o = Operation { operationName = undefined
-                                , operationAction = undefined
-                                , operationDocumentation = undefined
-                                , operationInput = undefined
-                                , operationOutput = undefined
-                                }
+        operation bt o = Operation { operationName = opName o
+                                   , operationAction = head . concat $ o $/ laxElement "operation" &| laxAttribute "soapAction"
+                                   , operationDocumentation = listToMaybe $ opDetails bt o $/ laxElement "documentation" &/ content
+
+                                   , operationInput  = mPart $ dropNS . head . concat $ opDetails bt o $/ laxElement "input"  &| laxAttribute "message"
+                                   , operationOutput = mPart $ dropNS . head . concat $ opDetails bt o $/ laxElement "output" &| laxAttribute "message"
+                                   }
+
+        opName o = head $ o $| laxAttribute "name"
+
+        pType bt = head . concat $ wsdl $/ laxElement "portType" &| attributeIs "name" bt
+        opDetails bt o = head . concat $ pType bt $/ laxElement "operation" &| attributeIs "name" (opName o)
+
+        mPart n = dropNS . head . concat . concat . concat $ wsdl $/ laxElement "message" &| attributeIs "name" n
+                                                                  &/ laxElement "part" &| attributeIs "name" "parameters"
+                                                                  &| laxAttribute "element"
 
 -- ** Types / fields
 
@@ -104,3 +116,9 @@ main = do
     case args of
         [] -> help
         url:stuff -> process url stuff
+
+-- * Utils
+
+-- | Remove tns: et al. from attribute values.
+dropNS :: Text -> Text
+dropNS = snd . T.breakOnEnd ":"
