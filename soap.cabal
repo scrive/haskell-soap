@@ -32,4 +32,5 @@ executable wsdl2hs
     base ==4.*,
     soap,
     http-conduit,
-    xml-conduit
+    xml-conduit,
+    text
