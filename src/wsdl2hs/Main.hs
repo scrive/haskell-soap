@@ -21,7 +21,7 @@ data Opts = Opts { useFile :: Maybe String
 opts :: Parser Opts
 opts = Opts <$> (optional $ strOption ( short 'f' <> long "file" <> help "Load schema from a file." <> metavar "FILE"))
             <*> (optional $ strOption ( short 'h' <> long "http" <> help "Get schmea from an URL." <> metavar "URL"))
-            <*> switch ( short 'd' <> long "dump" <> help "Dump intermediate schema AST representation.")
+            <*>                switch ( short 'd' <> long "dump" <> help "Dump intermediate schema AST representation.")
 
 optParser = info (helper <*> opts) (fullDesc <> progDesc "Lol" <> header "wsdl2hs - a lol program")
 
