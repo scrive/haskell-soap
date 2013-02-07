@@ -115,7 +115,7 @@ types wsdl = concat [ map typeElement $ wsdl $/ laxElement "types" &/ laxElement
         typeComplex e = (eName e, teComplex e)
         typeSimple e  = (eName e, teSimple e)
 
-        eName e = T.pack . show $ e $| laxAttribute "name"
+        eName e = head $ e $| laxAttribute "name"
 
         eType e = case ( e $/ laxElement "complexType"
                        , e $/ laxElement "simpleType"
