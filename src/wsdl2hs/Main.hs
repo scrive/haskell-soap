@@ -83,7 +83,7 @@ bindings wsdl = map binding $ wsdl $/ laxElement "binding"
 -- ** Types / fields
 
 data SOAPType =
-    ComplexType Text [ComplexField]
+    ComplexType [ComplexField]
   | SimpleType { simpleTypeBase :: Text
                , simpleTypeEnumeration :: Maybe [Text]
                }
@@ -96,9 +96,39 @@ data ComplexField = ComplexField { fieldMinOccurs :: Int
                                  } deriving (Show)
 
 types :: Cursor -> [(Text, SOAPType)]
-types wsdl = map typeElement $ wsdl $/ laxElement "types" &/ laxElement "schema" &/ laxElement "element"
+types wsdl = concat [ map typeElement $ wsdl $/ laxElement "types" &/ laxElement "schema" &/ laxElement "element"
+                    , map typeComplex $ wsdl $/ laxElement "types" &/ laxElement "schema" &/ laxElement "complexType"
+                    , map typeSimple  $ wsdl $/ laxElement "types" &/ laxElement "schema" &/ laxElement "simpleType"
+                    ]
     where
-        typeElement e = undefined
+        typeElement e = (eName e, eType e)
+        typeComplex e = (eName e, teComplex e)
+        typeSimple e  = (eName e, teSimple e)
+
+        eName e = T.pack . show $ e $| laxAttribute "name"
+
+        eType e = case ( e $/ laxElement "complexType"
+                       , e $/ laxElement "simpleType"
+                       ) of
+                       (complex:_, _) -> teComplex complex
+                       (_, simple:_) -> teSimple simple
+                       oops -> error $ "unknown element type: " ++ show oops
+
+        teComplex c = ComplexType $ map teComplexField $ c $/ laxElement "sequence" &/ laxElement "element"
+        teComplexField f = ComplexField { fieldMinOccurs = read . T.unpack . head $ f $| laxAttribute "minOccurs"
+                                        , fieldMaxOccurs = read . T.unpack . head $ f $| laxAttribute "maxOccurs"
+                                        , fieldName = head $ f $| laxAttribute "name"
+                                        , fieldType = head $ f $| laxAttribute "type"
+                                        }
+
+        teSimple s = SimpleType { simpleTypeBase = stBase s
+                                , simpleTypeEnumeration = stEnum s
+                                }
+        stBase s = head . concat $ s $/ laxElement "restriction" &| laxAttribute "base"
+        stEnum s = squash . map stEnumValue $ s $/ laxElement "restriction" &/ laxElement "enumeration"
+        stEnumValue v = head $ v $| laxAttribute "value"
+        squash [] = Nothing
+        squash vs = Just vs
 
 -- * Load up stuff
 
