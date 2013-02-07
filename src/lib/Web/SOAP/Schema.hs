@@ -1,7 +1,14 @@
 {-# LANGUAGE OverloadedStrings #-}
 
 module Web.SOAP.Schema
-    ( parseSchema
+    ( -- * Schema elements
+      Schema(..)
+    , Service(..), Port(..)
+    , Binding(..), Operation(..)
+    , SOAPType(..), ComplexField(..)
+
+    -- * WSDL parsing
+    , parseSchema
     , parseService
     , parseBindings
     , parseTypes
@@ -15,11 +22,13 @@ import           Data.Maybe
 
 -- * Schema elements
 
+-- | A container for processed WSDL data representation.
 data Schema = Schema { schemaService :: Service
                      , schemaBindings :: [Binding]
                      , schemaTypes :: [(Text, SOAPType)]
                      } deriving (Show)
 
+-- | Process a Text.XML.Document into a Schema.
 parseSchema :: Document -> Schema
 parseSchema doc = Schema (parseService wsdl) (parseBindings wsdl) (parseTypes wsdl)
     where wsdl = fromDocument doc
