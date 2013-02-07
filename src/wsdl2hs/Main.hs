@@ -11,22 +11,37 @@ import           Options.Applicative
 
 import           Control.Monad (when)
 
-import           Web.SOAP.Schema (parseSchema)
+import           Web.SOAP.Schema (parseSchema, Schema(..))
 
 data Opts = Opts { useFile :: Maybe String
                  , useHTTP :: Maybe String
-                 , dump :: Bool
+                 , optCommand :: Command
                  } deriving (Show)
+
+data Command = Dump
+             | List
+             deriving (Show)
 
 opts :: Parser Opts
 opts = Opts <$> (optional $ strOption ( short 'f' <> long "file" <> help "Load schema from a file." <> metavar "FILE"))
             <*> (optional $ strOption ( short 'h' <> long "http" <> help "Get schmea from an URL." <> metavar "URL"))
-            <*>                switch ( short 'd' <> long "dump" <> help "Dump intermediate schema AST representation.")
+            <*> subparser ( (command "dump" $ info dumpOpts $ progDesc "Dump intermediate schema AST representation.")
+                         <> (command "list" $ info listOpts $ progDesc "List schema elements.")
+                          )
 
+dumpOpts :: Parser Command
+dumpOpts = pure Dump
+
+listOpts :: Parser Command
+listOpts = pure List
+
+optParser :: ParserInfo Opts
 optParser = info (helper <*> opts) (fullDesc <> progDesc "Lol" <> header "wsdl2hs - a lol program")
 
+main :: IO ()
 main = execParser optParser >>= run
 
+run :: Opts -> IO ()
 run Opts{..} = do
     doc <- case (useHTTP, useFile) of
         (Just url, Nothing)   -> parseLBS_ def `fmap` simpleHttp url
@@ -36,4 +51,9 @@ run Opts{..} = do
 
     let schema = parseSchema doc
 
-    when dump $ putStrLn (ppShow schema)
+    case optCommand of
+        Dump -> putStrLn (ppShow schema)
+        List -> doList schema
+
+doList :: Schema -> IO ()
+doList = undefined
