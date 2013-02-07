@@ -19,6 +19,7 @@ library
   hs-source-dirs:    src/lib/
   exposed-modules:
     Web.SOAP
+    Web.SOAP.Schema
 --  other-modules:
   build-depends:
     base ==4.*,
@@ -35,4 +36,5 @@ executable wsdl2hs
     http-conduit,
     xml-conduit,
     text,
+    data-default,
     pretty-show
