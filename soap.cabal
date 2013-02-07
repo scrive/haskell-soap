@@ -35,7 +35,7 @@ executable wsdl2hs
     soap,
     http-conduit,
     xml-conduit,
-    bytestring,
+    text, bytestring,
     data-default,
     pretty-show,
     optparse-applicative
