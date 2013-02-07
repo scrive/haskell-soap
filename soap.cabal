@@ -34,4 +34,5 @@ executable wsdl2hs
     soap,
     http-conduit,
     xml-conduit,
-    text
+    text,
+    pretty-show

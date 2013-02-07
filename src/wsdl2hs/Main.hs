@@ -11,8 +11,18 @@ import qualified Data.Text.Lazy.IO as TL
 
 import Data.Maybe
 import System.Environment (getArgs)
+import Text.Show.Pretty (ppShow)
 
 -- * Schema elements
+
+data Schema = Schema { schemaService :: Service
+                     , schemaBindings :: [Binding]
+                     , schemaTypes :: [(Text, SOAPType)]
+                     } deriving (Show)
+
+schema :: Document -> Schema
+schema doc = Schema (service wsdl) (bindings wsdl) (types wsdl)
+    where wsdl = fromDocument doc
 
 -- ** Service / ports
 
@@ -133,10 +143,7 @@ types wsdl = concat [ map typeElement $ wsdl $/ laxElement "types" &/ laxElement
 -- * Load up stuff
 
 process stuff doc = do
-    let wsdl = fromDocument doc
-    print $ service wsdl
-    print $ bindings wsdl
-    print $ types wsdl
+    putStrLn . ppShow $ schema doc
 
 -- * Entry point
 
