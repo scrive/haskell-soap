@@ -7,6 +7,7 @@ import Text.XML
 import Text.XML.Cursor
 import Data.Text (Text)
 import qualified Data.Text as T
+import qualified Data.Text.Lazy.IO as TL
 
 import Data.Maybe
 import System.Environment (getArgs)
@@ -101,21 +102,22 @@ types wsdl = map typeElement $ wsdl $/ laxElement "types" &/ laxElement "schema"
 
 -- * Load up stuff
 
-process url stuff = do
-    wsdl <- (fromDocument . parseLBS_ def) `fmap` simpleHttp url
+process stuff doc = do
+    let wsdl = fromDocument doc
     print $ service wsdl
     print $ bindings wsdl
     print $ types wsdl
 
 -- * Entry point
 
-help = putStrLn "wsdl2hs <URL> [stuff, ...]"
+help = putStrLn "wsdl2hs -u <URL> | -f <FILE>"
 
 main = do
     args <- getArgs
     case args of
-        [] -> help
-        url:stuff -> process url stuff
+        "-u":url:stuff -> (parseLBS_ def `fmap` simpleHttp url) >>= process stuff
+        "-f":fname:stuff -> (parseText_ def `fmap` TL.readFile fname) >>= process stuff
+        _ -> help
 
 -- * Utils
 

@@ -24,7 +24,7 @@ library
     base ==4.*,
     http-conduit,
     xml-conduit,
-    bytestring, text, containers, unordered-containers
+    text
 
 executable wsdl2hs
   main-is:           Main.hs
