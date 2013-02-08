@@ -5,6 +5,7 @@ module Main where
 import qualified Data.ByteString.Lazy.Char8 as BSL
 import qualified Data.Text as T
 import qualified Data.Text.IO as T
+import qualified Data.Text.Lazy.IO as TL
 import           Network.HTTP.Conduit (simpleHttp)
 import           Text.XML (parseLBS_)
 import           Data.Default (def)
@@ -12,8 +13,10 @@ import           Text.Show.Pretty (ppShow)
 import           Options.Applicative
 
 import           Control.Monad (when, forM_)
+import           Data.List
 
 import           Web.SOAP.Schema
+import           Web.SOAP.Schema.Builder (buildCode)
 
 -- * Arguments
 
@@ -24,6 +27,7 @@ data Opts = Opts { useFile :: Maybe String
 
 data Command = Dump
              | ListOps
+             | Code String
              deriving (Show)
 
 opts :: Parser Opts
@@ -31,6 +35,7 @@ opts = Opts <$> (optional $ strOption ( short 'f' <> long "file" <> help "Load s
             <*> (optional $ strOption ( short 'h' <> long "http" <> help "Get schmea from an URL." <> metavar "URL"))
             <*> subparser ( (command "dump"       $ info dumpOpts $ progDesc "Dump intermediate schema AST representation.")
                          <> (command "operations" $ info listOps  $ progDesc "List service operations.")
+                         <> (command "code"       $ info codeOpts $ progDesc "Generate haskell module")
                           )
 
 dumpOpts :: Parser Command
@@ -38,6 +43,9 @@ dumpOpts = pure Dump
 
 listOps :: Parser Command
 listOps = pure ListOps
+
+codeOpts :: Parser Command
+codeOpts = Code <$> (argument str $ metavar "PORT")
 
 optParser :: ParserInfo Opts
 optParser = info (helper <*> opts) (fullDesc <> progDesc "Lol" <> header "wsdl2hs - a lol program")
@@ -60,6 +68,7 @@ run Opts{..} = do
     case optCommand of
         Dump    -> putStrLn (ppShow schema)
         ListOps -> doList schema
+        Code port -> doCode schema (T.pack port)
 
 -- * Commands
 
@@ -101,3 +110,39 @@ bar _ = "│"
 soapTransport :: T.Text -> T.Text
 soapTransport "http://schemas.xmlsoap.org/soap/http" = "[HTTP]"
 soapTransport x = x
+
+-- ** Generate code
+
+doCode :: Schema -> T.Text -> IO ()
+doCode schema pname = do
+    let (mService, mOperations, mTypes) = buildCode schema pname
+    TL.putStrLn mTypes
+
+--foo = do
+--    let (pb, pa) = case [ p | p <- ps, portName p == pname] of
+--                        [p] -> (portBinding p, portAddress p)
+--                        []  -> error "Port binding not found."
+--                        _   -> error "Multiple ports found for that name."
+
+--    print (sn, pa)
+
+--    let (bt, btr, os) = case [ b | b <- bs, bindingName b == pb ] of
+--                             [b] -> (bindingType b, bindingTransport b, bindingOperations b)
+--                             []  -> error "No matching binding found for port."
+--                             _   -> error "Multiple bindings found for port."
+
+--    print (bt, btr)
+
+    ----print os
+
+    --print $ opTypes os
+
+    --forM_ (opTypes os) $ \t -> do
+    --    print $ maybe (error $ "Missing operation type: " ++ T.unpack t) id $ lookup t ts
+
+    ----forM_ os $ \(Operation{..}) -> do
+    ----    print (operationName, operationAction, operationInput, operationOutput)
+
+opTypes = nub . concat . map opType
+  where
+    opType Operation{..} = [operationInput, operationOutput]
