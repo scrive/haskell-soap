@@ -2,4 +2,4 @@ syntax: glob
 
 dist/*
 cabal-dev/*
-Private.hs
+out/*

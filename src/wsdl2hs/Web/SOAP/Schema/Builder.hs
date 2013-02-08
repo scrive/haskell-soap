@@ -9,6 +9,7 @@ import qualified Data.Text.Lazy as TL
 import           Data.Text.Lazy.Builder
 
 import           Data.Monoid
+import           Data.Maybe
 
 import           Web.SOAP.Schema
 
@@ -28,11 +29,21 @@ typeModule :: Schema -> T.Text -> SOAPType -> Builder
 typeModule schema tn t =
     mconcat [ modHeader schema $ "Types." <> tn
             , "import qualified Data.Text as T\n\n"
+            , modImports t
             , case t of
                   ComplexType fs              -> buildComplex tn fs
                   SimpleType base (Just enum) -> buildSimpleEnum tn base enum
                   x                           -> error $ "Unknown field spec: " ++ show x
             ]
+    where
+        modImports :: SOAPType -> Builder
+        modImports (ComplexType fs) = mconcat . catMaybes . map cfDeps $ fs
+        modImports _ = ""
+
+        cfDeps :: ComplexField -> Maybe Builder
+        cfDeps cf = case T.breakOnEnd ":" (fieldType cf) of
+                        ("tns:", cfType) -> Just $ typeImport schema cfType
+                        ("s:", _) -> Nothing
 
 buildComplex :: T.Text -> [ComplexField] -> Builder
 buildComplex tn fs =
@@ -58,13 +69,14 @@ buildComplex tn fs =
         justify 0 = ""
         justify _ = spaces indent <> ", "
 
-        recordType "s:int" = "Int"
-        recordType "s:string" = "T.Text"
-        recordType "s:decimal" = "Float"
-        recordType (T.breakOnEnd ":" -> (tns, tn)) =
-            case tns of
-                "tns:" -> fromText tn
-                x -> error $ "Unknown type: " ++ show (tns <> tn)
+recordType :: T.Text -> Builder
+recordType "s:int" = "Int"
+recordType "s:string" = "T.Text"
+recordType "s:decimal" = "Float"
+recordType (T.breakOnEnd ":" -> (tns, tn)) =
+    case tns of
+        "tns:" -> fromText tn
+        x -> error $ "Unknown type: " ++ show (tns <> tn)
 
 buildSimpleEnum tn base enum =
     mconcat [ mconcat [ "{- base = ", fromText base ," -}\n" ]
@@ -95,6 +107,12 @@ modHeader schema name = mconcat [ "module "
                                 , modName schema name
                                 , " where\n\n"
                                 ]
+
+typeImport :: Schema -> T.Text -> Builder
+typeImport schema name = mconcat [ "import "
+                                 , modName schema $ "Types." <> name
+                                 , singleton '\n'
+                                 ]
 
 spaces :: Int -> Builder
 spaces n = fromString . take n $ repeat ' '
