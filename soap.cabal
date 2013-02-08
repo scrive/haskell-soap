@@ -38,4 +38,5 @@ executable wsdl2hs
     text, bytestring,
     data-default,
     pretty-show,
+    directory,
     optparse-applicative

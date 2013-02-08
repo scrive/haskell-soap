@@ -11,6 +11,7 @@ import           Text.XML (parseLBS_)
 import           Data.Default (def)
 import           Text.Show.Pretty (ppShow)
 import           Options.Applicative
+import           System.Directory
 
 import           Control.Monad (when, forM_)
 import           Data.List
@@ -115,8 +116,21 @@ soapTransport x = x
 
 doCode :: Schema -> T.Text -> IO ()
 doCode schema pname = do
+    let sName = T.unpack . serviceName . schemaService $ schema
     let (mService, mOperations, mTypes) = buildCode schema pname
-    TL.putStrLn mTypes
+
+    needCleanup <- doesDirectoryExist "out"
+    when needCleanup $ removeDirectoryRecursive "out"
+    createDirectory "out"
+    createDirectory "out/Web"
+    createDirectory "out/Web/SOAP"
+    createDirectory $ "out/Web/SOAP/" ++ sName
+    createDirectory $ "out/Web/SOAP/" ++ sName ++ "/Types"
+    createDirectory $ "out/Web/SOAP/" ++ sName ++ "/Ops"
+
+    forM_ mTypes $ \(name, content) -> do
+        putStrLn name
+        TL.writeFile ("out/Web/SOAP/" ++ sName ++ "/Types/" ++ name ++ ".hs") content
 
 --foo = do
 --    let (pb, pa) = case [ p | p <- ps, portName p == pname] of

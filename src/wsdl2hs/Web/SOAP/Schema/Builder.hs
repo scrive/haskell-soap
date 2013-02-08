@@ -14,24 +14,28 @@ import           Web.SOAP.Schema
 
 -- * Module builders
 
-buildCode :: Schema -> T.Text -> (TL.Text, TL.Text, TL.Text)
+buildCode :: Schema -> T.Text -> (TL.Text, TL.Text, [(String, TL.Text)])
 buildCode schema portName = ( toLazyText "module %PREFIX%.%ServiceName%.Service where"
                             , toLazyText "module %PREFIX%.%ServiceName%.Operations where"
-                            , toLazyText $ typesModule schema
+                            , [ (T.unpack name, toLazyText $ typeModule schema name type_)
+                              | (name, type_) <- schemaTypes schema
+                              ]
                             )
 
 -- ** Types
 
-typesModule :: Schema -> Builder
-typesModule schema =
-    mconcat [ modHeader schema "Types"
+typeModule :: Schema -> T.Text -> SOAPType -> Builder
+typeModule schema tn t =
+    mconcat [ modHeader schema $ "Types." <> tn
             , "import qualified Data.Text as T\n\n"
-            , mconcat (map buildType $ schemaTypes schema)
+            , case t of
+                  ComplexType fs              -> buildComplex tn fs
+                  SimpleType base (Just enum) -> buildSimpleEnum tn base enum
+                  x                           -> error $ "Unknown field spec: " ++ show x
             ]
 
-buildType :: (T.Text, SOAPType) -> Builder
-
-buildType (tn, ComplexType fs) =
+buildComplex :: T.Text -> [ComplexField] -> Builder
+buildComplex tn fs =
     mconcat [ mconcat [ "data ", fromText tn, " = ", fromText tn, " { " ]
             , mconcat [ buildField pos f
                       | (pos, f) <- zip [0..] fs
@@ -62,7 +66,7 @@ buildType (tn, ComplexType fs) =
                 "tns:" -> fromText tn
                 x -> error $ "Unknown type: " ++ show (tns <> tn)
 
-buildType (tn, SimpleType base (Just enum)) =
+buildSimpleEnum tn base enum =
     mconcat [ mconcat [ "{- base = ", fromText base ," -}\n" ]
             , mconcat [ "data ", fromText tn, " = " ]
             , mconcat [ justify pos <> fromText e <> singleton '\n'
