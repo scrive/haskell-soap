@@ -115,12 +115,14 @@ data ComplexField = ComplexField { fieldMinOccurs :: Int
                                  } deriving (Show)
 
 parseTypes :: Cursor -> [(Text, SOAPType)]
-parseTypes wsdl = concat [ map typeElement $ wsdl $/ laxElement "types" &/ laxElement "schema" &/ laxElement "element"
+parseTypes wsdl = concat [ catMaybes . map typeElement $ wsdl $/ laxElement "types" &/ laxElement "schema" &/ laxElement "element"
                     , map typeComplex $ wsdl $/ laxElement "types" &/ laxElement "schema" &/ laxElement "complexType"
                     , map typeSimple  $ wsdl $/ laxElement "types" &/ laxElement "schema" &/ laxElement "simpleType"
                     ]
     where
-        typeElement e = (eName e, eType e)
+        typeElement e = case eType e of
+                            Nothing -> Nothing
+                            Just et -> Just (eName e, et)
         typeComplex e = (eName e, teComplex e)
         typeSimple e  = (eName e, teSimple e)
 
@@ -129,9 +131,10 @@ parseTypes wsdl = concat [ map typeElement $ wsdl $/ laxElement "types" &/ laxEl
         eType e = case ( e $/ laxElement "complexType"
                        , e $/ laxElement "simpleType"
                        ) of
-                       (complex:_, _) -> teComplex complex
-                       (_, simple:_) -> teSimple simple
-                       oops -> error $ "unknown element type: " ++ show oops
+                       ([], [])       -> Nothing
+                       (complex:_, _) -> Just $ teComplex complex
+                       (_, simple:_)  -> Just $ teSimple simple
+                       oops           -> error $ "unknown element type: " ++ show oops
 
         teComplex c = ComplexType $ map teComplexField $ c $/ laxElement "sequence" &/ laxElement "element"
         teComplexField f = ComplexField { fieldMinOccurs = read . T.unpack . head $ f $| laxAttribute "minOccurs"
