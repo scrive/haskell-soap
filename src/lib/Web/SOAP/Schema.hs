@@ -137,13 +137,15 @@ parseTypes wsdl = concat [ map typeElement $ wsdl $/ laxElement "types" &/ laxEl
         teComplexField f = ComplexField { fieldMinOccurs = read . T.unpack . head $ f $| laxAttribute "minOccurs"
                                         , fieldMaxOccurs = read . T.unpack . head $ f $| laxAttribute "maxOccurs"
                                         , fieldName = head $ f $| laxAttribute "name"
-                                        , fieldType = head $ f $| laxAttribute "type"
+                                        , fieldType = defType $ f $| laxAttribute "type"
                                         }
 
         teSimple s = SimpleType { simpleTypeBase = stBase s
                                 , simpleTypeEnumeration = stEnum s
                                 }
-        stBase s = head . concat $ s $/ laxElement "restriction" &| laxAttribute "base"
+        stBase s = defType . concat $ s $/ laxElement "restriction" &| laxAttribute "base"
+        defType [] = "s:string"
+        defType [b] = b
         stEnum s = squash . map stEnumValue $ s $/ laxElement "restriction" &/ laxElement "enumeration"
         stEnumValue v = head $ v $| laxAttribute "value"
         squash [] = Nothing
