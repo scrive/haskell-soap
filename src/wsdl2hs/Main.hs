@@ -131,32 +131,3 @@ doCode schema pname = do
     forM_ mTypes $ \(name, content) -> do
         putStrLn name
         TL.writeFile ("out/Web/SOAP/" ++ sName ++ "/Types/" ++ name ++ ".hs") content
-
---foo = do
---    let (pb, pa) = case [ p | p <- ps, portName p == pname] of
---                        [p] -> (portBinding p, portAddress p)
---                        []  -> error "Port binding not found."
---                        _   -> error "Multiple ports found for that name."
-
---    print (sn, pa)
-
---    let (bt, btr, os) = case [ b | b <- bs, bindingName b == pb ] of
---                             [b] -> (bindingType b, bindingTransport b, bindingOperations b)
---                             []  -> error "No matching binding found for port."
---                             _   -> error "Multiple bindings found for port."
-
---    print (bt, btr)
-
-    ----print os
-
-    --print $ opTypes os
-
-    --forM_ (opTypes os) $ \t -> do
-    --    print $ maybe (error $ "Missing operation type: " ++ T.unpack t) id $ lookup t ts
-
-    ----forM_ os $ \(Operation{..}) -> do
-    ----    print (operationName, operationAction, operationInput, operationOutput)
-
-opTypes = nub . concat . map opType
-  where
-    opType Operation{..} = [operationInput, operationOutput]
