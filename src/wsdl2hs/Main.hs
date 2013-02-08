@@ -33,7 +33,7 @@ data Command = Dump
 
 opts :: Parser Opts
 opts = Opts <$> (optional $ strOption ( short 'f' <> long "file" <> help "Load schema from a file." <> metavar "FILE"))
-            <*> (optional $ strOption ( short 'h' <> long "http" <> help "Get schmea from an URL." <> metavar "URL"))
+            <*> (optional $ strOption (              long "http" <> help "Get schmea from an URL." <> metavar "URL"))
             <*> subparser ( (command "dump"       $ info dumpOpts $ progDesc "Dump intermediate schema AST representation.")
                          <> (command "operations" $ info listOps  $ progDesc "List service operations.")
                          <> (command "code"       $ info codeOpts $ progDesc "Generate haskell module")
