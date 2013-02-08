@@ -15,6 +15,8 @@ import           Control.Monad (when, forM_)
 
 import           Web.SOAP.Schema
 
+-- * Arguments
+
 data Opts = Opts { useFile :: Maybe String
                  , useHTTP :: Maybe String
                  , optCommand :: Command
@@ -40,6 +42,8 @@ listOps = pure ListOps
 optParser :: ParserInfo Opts
 optParser = info (helper <*> opts) (fullDesc <> progDesc "Lol" <> header "wsdl2hs - a lol program")
 
+-- * Entry
+
 main :: IO ()
 main = execParser optParser >>= run
 
@@ -56,6 +60,10 @@ run Opts{..} = do
     case optCommand of
         Dump    -> putStrLn (ppShow schema)
         ListOps -> doList schema
+
+-- * Commands
+
+-- ** List operations
 
 doList :: Schema -> IO ()
 doList (Schema (Service sn ps) bs ts) = do
