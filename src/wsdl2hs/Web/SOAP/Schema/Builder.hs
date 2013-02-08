@@ -71,8 +71,11 @@ buildComplex tn fs =
 
 recordType :: T.Text -> Builder
 recordType "s:int" = "Int"
+recordType "s:long" = "Int"
 recordType "s:string" = "T.Text"
 recordType "s:decimal" = "Float"
+recordType "s:boolean" = "Bool"
+recordType "s:dateTime" = "String" -- TODO: use a real type
 recordType (T.breakOnEnd ":" -> (tns, tn)) =
     case tns of
         "tns:" -> fromText tn
