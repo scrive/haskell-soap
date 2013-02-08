@@ -67,22 +67,24 @@ run Opts{..} = do
 
 doList :: Schema -> IO ()
 doList (Schema (Service sn ps) bs ts) = do
-    T.putStr "╭┅ "
-    T.putStrLn sn
+    putTexts ["╭┅ ", sn]
 
     forM_ (rEnum bs) $ \(bi, Binding bn bt btr bops) -> do
-        T.putStrLn . T.concat $ [node bi, "───┬╼ ", bn, " <", bt, "> ", soapTransport btr]
+        putTexts [node bi, "───┬╼ ", bn, " <", bt, "> ", soapTransport btr]
         forM_ (rEnum bops) $ \(oi, Operation{..}) -> do
-            T.putStrLn . T.concat $ [bar bi, "   ", node oi, "───┬╼ ", operationName]
+            putTexts [bar bi, "   ", node oi, "───┬╼ ", operationName]
 
             when (operationName /= operationAction) $
-                T.putStrLn . T.concat $ [bar bi, "   ", bar oi, "   ├──┄ ", operationAction]
+                putTexts [bar bi, "   ", bar oi, "   ├──┄ ", operationAction]
 
             case operationDocumentation of
-                Just doc -> T.putStrLn . T.concat $ [bar bi, "   ", bar oi, "   ├──“", doc, "”"]
+                Just doc -> putTexts [bar bi, "   ", bar oi, "   ├──“", doc, "”"]
                 Nothing -> return ()
 
-            T.putStrLn . T.concat $ [bar bi, "   ", bar oi, "   ╘══╍ ", operationInput, " →  ", operationOutput]
+            putTexts [bar bi, "   ", bar oi, "   ╘══╍ ", operationInput, " →  ", operationOutput]
+
+putTexts :: [T.Text] -> IO ()
+putTexts = T.putStrLn . T.concat
 
 rEnum :: [a] -> [(Int, a)]
 rEnum stuff = zip [l, l-1 .. 0] stuff
