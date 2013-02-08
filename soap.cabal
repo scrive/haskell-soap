@@ -3,7 +3,7 @@
 
 name:                soap
 version:             0.1.0.0
-synopsis:            SOAP client
+synopsis:            SOAP client and bindings generator
 -- description:         
 homepage:            https://bitbucket.org/dpwiz/haskell-soap
 license:             MIT
