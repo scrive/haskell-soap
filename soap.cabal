@@ -19,12 +19,15 @@ library
   hs-source-dirs:    src/lib/
   exposed-modules:
     Web.SOAP
+    Web.SOAP.Service
     Web.SOAP.Schema
+    Web.SOAP.Schema.Types
 --  other-modules:
   build-depends:
     base ==4.*,
     http-conduit,
     xml-conduit,
+    iconv,
     text
 
 executable wsdl2hs

@@ -29,6 +29,7 @@ typeModule :: Schema -> T.Text -> SOAPType -> Builder
 typeModule schema tn t =
     mconcat [ modHeader schema $ "Types." <> tn
             , "import qualified Data.Text as T\n\n"
+            , "import           Web.SOAP.Schema.Types\n"
             , modImports t
             , case t of
                   ComplexType fs              -> buildComplex tn fs
