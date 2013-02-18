@@ -14,7 +14,7 @@ import qualified Data.Text.Encoding as TE
 import qualified Codec.Text.IConv as IC
 import           Data.Monoid ((<>))
 
-import Web.SOAP.Schema.Types
+import Web.SOAP.Types
 
 data SOAPSettings = SOAPSettings {
     soapURL :: String,
