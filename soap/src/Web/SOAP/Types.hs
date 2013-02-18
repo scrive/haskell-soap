@@ -27,8 +27,8 @@ class ToNodes a where
 instance (ToNodes a) => ToNodes (Name, a) where
     toElement (n, b) = Element n def (toNodes b)
 
-instance ToNodes (Name, Text) where
-    toNodes (n, c) = [NodeElement $ Element n def [NodeContent c]]
+instance (ToNodes a) => ToNodes [a] where
+    toNodes = concat . map toNodes
 
 instance ToNodes Text where
     toNodes x = [NodeContent x]
