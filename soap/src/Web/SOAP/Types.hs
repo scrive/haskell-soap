@@ -1,6 +1,6 @@
 {-# LANGUAGE FlexibleInstances #-}
 
-module Web.SOAP.Schema.Types
+module Web.SOAP.Types
     ( ToNodes(..)
     , ToAttribute(..)
     , FromCursor(..)

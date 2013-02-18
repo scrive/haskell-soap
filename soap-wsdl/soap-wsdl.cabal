@@ -18,10 +18,8 @@ cabal-version:       >=1.8
 library
   hs-source-dirs:    src/lib/
   exposed-modules:
-    Web.SOAP
-    Web.SOAP.Service
     Web.SOAP.Schema
-    Web.SOAP.Schema.Types
+    Web.SOAP.Schema.Builder
 --  other-modules:
   build-depends:
     base ==4.*,
