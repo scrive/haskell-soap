@@ -23,7 +23,7 @@ data SOAPSettings = SOAPSettings {
 } deriving (Read, Show)
 
 
-invokeWS :: (ToElements h, ToElements i, FromCursor o)
+invokeWS :: (ToNodes h, ToNodes i, FromCursor o)
          => SOAPSettings  -- web service configuration
          -> Text          -- SOAPAction header
          -> h             -- request headers
@@ -31,7 +31,7 @@ invokeWS :: (ToElements h, ToElements i, FromCursor o)
          -> IO o          -- response
 
 invokeWS SOAPSettings{..} methodHeader h b = do
-    let doc = document $! envelope (toElements h) (toElements b)
+    let doc = document $! envelope (toNodes h) (toNodes b)
     let body = renderLBS def $! doc
 
     putStrLn "Request:"
@@ -67,11 +67,11 @@ invokeWS SOAPSettings{..} methodHeader h b = do
 document :: Element -> Document
 document r = Document (Prologue [] Nothing []) r []
 
-envelope :: [Element] -> [Element] -> Element
+envelope :: [Node] -> [Node] -> Element
 envelope h b =
     Element
         "{http://schemas.xmlsoap.org/soap/envelope/}Envelope"
         def
-        [ NodeElement $! Element "{http://schemas.xmlsoap.org/soap/envelope/}Header" def (map NodeElement h)
-        , NodeElement $! Element "{http://schemas.xmlsoap.org/soap/envelope/}Body" def (map NodeElement b)
+        [ NodeElement $! Element "{http://schemas.xmlsoap.org/soap/envelope/}Header" def h
+        , NodeElement $! Element "{http://schemas.xmlsoap.org/soap/envelope/}Body" def b
         ]
