@@ -14,6 +14,10 @@ import Text.XML.Cursor (Cursor)
 
 -- ** Construct elements
 
+-- | Convert data to a Node list.
+--   One of the functions should be provided with others building up on it.
+--   
+--   Only use 'toNodes' to obtain a Node list.
 class ToNodes a where
     toElement :: a -> Element
     toElement = undefined

@@ -1,7 +1,7 @@
 {-# LANGUAGE OverloadedStrings, RecordWildCards #-}
 module Web.SOAP.Service
-    ( invokeWS
-    , SOAPSettings(..)
+    ( SOAPSettings(..)
+    , invokeWS
     ) where
 
 import           Text.XML
@@ -16,6 +16,7 @@ import           Data.Monoid ((<>))
 
 import Web.SOAP.Types
 
+-- | SOAP service parameters
 data SOAPSettings = SOAPSettings {
     soapURL :: String,
     soapNamespace :: Text,
@@ -23,12 +24,13 @@ data SOAPSettings = SOAPSettings {
 } deriving (Read, Show)
 
 
+-- | Query a SOAP service.
 invokeWS :: (ToNodes h, ToNodes i, FromCursor o)
-         => SOAPSettings  -- web service configuration
-         -> Text          -- SOAPAction header
-         -> h             -- request headers
-         -> i             -- request body
-         -> IO o          -- response
+         => SOAPSettings  -- ^ web service configuration
+         -> Text          -- ^ SOAPAction header
+         -> h             -- ^ request headers
+         -> i             -- ^ request body
+         -> IO o          -- ^ response
 
 invokeWS SOAPSettings{..} methodHeader h b = do
     let doc = document $! envelope (toNodes h) (toNodes b)
