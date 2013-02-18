@@ -3,3 +3,6 @@ syntax: glob
 dist/*
 cabal-dev/*
 out/*
+*.wsdl
+
+soap.sublime-workspace

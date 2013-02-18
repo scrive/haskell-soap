@@ -1,0 +1,15 @@
+{
+	"folders":
+	[
+		{
+			"folder_exclude_patterns":
+			[
+				"soap/cabal-dev",
+				"soap/dist",
+                "soap-wsdl/cabal-dev",
+                "soap-wsdl/dist"
+			],
+			"path": "."
+		}
+	]
+}
