@@ -9,8 +9,10 @@ import           Text.XML.Cursor
 import           Network.HTTP.Conduit
 import           Data.Text (Text)
 import qualified Data.Text as T
+import qualified Data.Text.Lazy as TL
 import qualified Data.Text.Lazy.IO as TL
 import qualified Data.Text.Encoding as TE
+import qualified Data.Text.Lazy.Encoding as TLE
 import qualified Codec.Text.IConv as IC
 import           Data.Monoid ((<>))
 
@@ -34,15 +36,16 @@ invokeWS :: (ToNodes h, ToNodes i, FromCursor o)
 
 invokeWS SOAPSettings{..} methodHeader h b = do
     let doc = document $! envelope (toNodes h) (toNodes b)
-    let body = renderLBS def $! doc
+    let stripEmptyNS = TL.replace " xmlns=\"\"" ""
+    let body = stripEmptyNS . renderText def $! doc
 
     putStrLn "Request:"
-    TL.putStrLn . renderText def { rsPretty = True } $! doc
+    TL.putStrLn . stripEmptyNS . renderText def { rsPretty = True } $! doc
 
     request <- parseUrl soapURL
     res <- withManager $ httpLbs request { method          = "POST"
                                          , responseTimeout = Just 15000000
-                                         , requestBody     = RequestBodyLBS body
+                                         , requestBody     = RequestBodyLBS $ TLE.encodeUtf8 body
                                          , requestHeaders  = [ ("Content-Type", "text/xml; charset=utf-8")
                                                              , ("SOAPAction", TE.encodeUtf8 methodHeader)
                                                              ]
