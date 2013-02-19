@@ -23,9 +23,10 @@ library
 --  other-modules:
   build-depends:
     base ==4.*,
-    http-conduit,
+    soap ==0.1.0.*,
+--    http-conduit,
     xml-conduit,
-    iconv,
+--    iconv,
     text
 
 executable wsdl2hs
@@ -33,7 +34,7 @@ executable wsdl2hs
   hs-source-dirs:    src/wsdl2hs/
   build-depends:
     base ==4.*,
-    soap,
+    soap ==0.1.0.*,
     http-conduit,
     xml-conduit,
     text, bytestring,

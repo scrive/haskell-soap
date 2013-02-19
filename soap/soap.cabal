@@ -3,8 +3,8 @@
 
 name:                soap
 version:             0.1.0.0
-synopsis:            SOAP client
--- description:         
+synopsis:            SOAP client tools
+description:         Tools to build SOAP clients using xml-conduit.
 homepage:            https://bitbucket.org/dpwiz/haskell-soap
 license:             MIT
 license-file:        LICENSE
@@ -26,4 +26,5 @@ library
     http-conduit,
     xml-conduit,
     iconv,
-    text
+    text,
+    unordered-containers
