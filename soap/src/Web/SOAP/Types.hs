@@ -2,7 +2,7 @@
 
 module Web.SOAP.Types
     ( ToNodes(..), (.=:), (.=)
-    , FromCursor(..), readT, readC, readContent, Dict, asDict
+    , FromCursor(..), readT, readC, Dict, asDict
     ) where
 
 import           Data.Text (Text)
@@ -66,8 +66,8 @@ readC :: (Read a) => Text -> Cursor -> a
 readC n c = read . T.unpack $ readT n c
 {-# INLINE readC #-}
 
-readContent :: (Read a) => Cursor -> a
-readContent = error . show . T.unpack . T.concat . content
+--readContent :: (Read a) => Cursor -> a
+--readContent = read . T.unpack . T.concat . content
 
 -- ** Multi-element extraction.
 
