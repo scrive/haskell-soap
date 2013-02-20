@@ -2,7 +2,6 @@
 
 module Web.SOAP.Types
     ( ToNodes(..), (.=:), (.=)
-    , ToAttribute(..)
     , FromCursor(..), readT, readC, readContent, Dict, asDict
     ) where
 
@@ -51,14 +50,6 @@ n .=: ns = toNodes (n, ns)
 
 (.=) :: Name -> Text -> Node
 n .= t = head $ toNodes (n, toNodes t)
-
--- ** Construct attributes
-
-class ToAttribute a where
-    toAttribute :: a -> (Name, Text)
-
---instance (ToAttribute a) => (Name, Text) where
---    toAttribute (n, t) = (n, t)
 
 -- * Extract data from XML cursor
 
