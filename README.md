@@ -39,7 +39,7 @@ Use `.=` to construct a text node and wrap a list of nodes into element with `.=
     newtype EchoQuery = EchoQuery Text
     
     instance ToNodes EchoQuery where
-        toNodes (EchoQuery t) = "{urn:test}EchoQuery" .=: [ "Echo" .= t ]
+        toNodes (EchoQuery t) = "EchoQuery" .=: [ "Echo" .= t ]
 
 **FromCursor**
 

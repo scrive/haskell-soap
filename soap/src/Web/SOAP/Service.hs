@@ -35,17 +35,19 @@ invokeWS :: (ToNodes h, ToNodes i, FromCursor o)
          -> IO o          -- ^ response
 
 invokeWS SOAPSettings{..} methodHeader h b = do
-    let doc = document $! envelope (toNodes h) (toNodes b)
-    let stripEmptyNS = TL.replace " xmlns=\"\"" ""
-    let body = stripEmptyNS . renderText def $! doc
+    let headerNodes = toNodes h
+    let bodyNodes = map (flowNS $ Just soapNamespace) (toNodes b)
+
+    let doc = document $! envelope headerNodes bodyNodes
+    let body = renderLBS def $! doc
 
     putStrLn "Request:"
-    TL.putStrLn . stripEmptyNS . renderText def { rsPretty = True } $! doc
+    TL.putStrLn . renderText def { rsPretty = True } $! doc
 
     request <- parseUrl soapURL
     res <- withManager $ httpLbs request { method          = "POST"
                                          , responseTimeout = Just 15000000
-                                         , requestBody     = RequestBodyLBS $ TLE.encodeUtf8 body
+                                         , requestBody     = RequestBodyLBS body
                                          , requestHeaders  = [ ("Content-Type", "text/xml; charset=utf-8")
                                                              , ("SOAPAction", TE.encodeUtf8 methodHeader)
                                                              ]
@@ -80,3 +82,10 @@ envelope h b =
         [ NodeElement $! Element "{http://schemas.xmlsoap.org/soap/envelope/}Header" def h
         , NodeElement $! Element "{http://schemas.xmlsoap.org/soap/envelope/}Body" def b
         ]
+
+-- | Little helper to apply default service namespace to body nodes and their descendants.
+--   This removes the necessity to flood your code with {http://vendor.silly.web/Service.spamx} in element names.
+flowNS :: Maybe Text -> Node -> Node
+flowNS ns (NodeElement (Element (Name name Nothing prefix) as cs)) = NodeElement $ Element (Name name ns prefix) as $ map (flowNS ns) cs  -- update element ns and continue
+flowNS ns (NodeElement (Element name@(Name _ ns' _) as cs))        = NodeElement $ Element name as                  $ map (flowNS ns') cs -- switch to new namespace and continue
+flowNS ns node = node -- ignore non-elements
