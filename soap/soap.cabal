@@ -2,7 +2,7 @@
 -- see http://haskell.org/cabal/users-guide/
 
 name:                soap
-version:             0.1.0.1
+version:             0.1.0.4
 synopsis:            SOAP client tools
 description:         Tools to build SOAP clients using xml-conduit.
 homepage:            https://bitbucket.org/dpwiz/haskell-soap
@@ -17,13 +17,14 @@ cabal-version:       >=1.8
 
 library
   hs-source-dirs:    src/
+  ghc-options: -Wall -O2
   exposed-modules:
     Web.SOAP.Service
     Web.SOAP.Types
 --  other-modules:
   build-depends:
     base ==4.*,
-    http-conduit,
+    http-conduit, resourcet, tls-extra,
     xml-conduit,
     iconv,
     text,
