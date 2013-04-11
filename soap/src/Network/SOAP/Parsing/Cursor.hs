@@ -43,7 +43,7 @@ type Dict = HM.HashMap Text Text
 --
 -- > invokeWS … (CursorParser . readDict $ laxElement "WebScaleResponse" &/ laxElement "BigDataResult")
 readDict :: Axis -> Cursor -> Dict
-readDict a c = extract . head $ c $// a
+readDict a c = extract . head $ c $/ a
     where
         extract cur = HM.fromList . mapMaybe dict . map node $ cur $| child
 
