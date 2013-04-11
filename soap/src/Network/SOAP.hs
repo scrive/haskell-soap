@@ -12,7 +12,7 @@ import Network.SOAP.Transport (Transport)
 
 import Data.Conduit
 
-import qualified Data.ByteString.Lazy as LBS
+import qualified Data.ByteString.Lazy.Char8 as LBS
 
 import           Data.Default (def)
 import qualified Text.XML as XML
@@ -50,6 +50,6 @@ unwrapEnvelopeSink sink = XSP.force "No SOAP Envelope" $ XSP.tagNoAttr "Envelope
                         $ sink
 
 unwrapEnvelopeCursor :: Cursor -> Cursor
-unwrapEnvelopeCursor c = forceCur $ c $/ laxElement "Envelope" &/ laxElement "Body"
+unwrapEnvelopeCursor c = forceCur $ c $| laxElement "Envelope" &/ laxElement "Body"
     where forceCur [] = error "No SOAP Body"
           forceCur (x:_) = x
