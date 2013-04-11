@@ -71,6 +71,7 @@ test-suite tests
   main-is: Main.hs
   hs-source-dirs: test/
   build-depends:
-    base, soap,
+    base, soap, hspec, HUnit,
     xml-conduit, xml-conduit-writer,
-    text
+    text, bytestring,
+    unordered-containers
