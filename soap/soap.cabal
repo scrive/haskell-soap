@@ -1,5 +1,5 @@
 name:                soap
-version:             0.2.0.0
+version:             0.2.0.1
 synopsis:            SOAP client tools
 description:
   Tools to build SOAP clients using xml-conduit.
@@ -21,9 +21,9 @@ description:
   > listStaff t active = invokeWS t "urn:dummy:listStaff" () body parser
   >     where
   >         body = element "request" $ element "listStaff" $ do
-  >                    element "active" $ toXML active
-  >                    element "order" "age"
-  >                    element "limit" $ toXML (10 :: Int)
+  >                    element "active" active
+  >                    element "order" $ T.pack "age"
+  >                    element "limit" (10 :: Int)
   >
   >         parser = StreamParser $ force "no people" $ tagNoAttr "people" $ Parse.many parsePerson
   >
