@@ -70,9 +70,9 @@ main = hspec $ do
 
 saladHandler = Mock.handler $ \_ -> do
     return . element "salad" $ do
-        element "sausage" "some"
-        element "bacon" "many"
-        element "eggs" "2"
+        element "sausage" ("some" :: Text)
+        element "bacon" ("many" :: Text)
+        element "eggs" (2 :: Integer)
 
 data RecipeEntry = RecipeEntry Text Text deriving (Eq, Show)
 data Recipe = Recipe [RecipeEntry] deriving (Eq, Show)
