@@ -11,7 +11,7 @@ module Network.SOAP.Transport.HTTP.Conduit
       -- * Making a request
     , RequestP, clientCert
       -- * Processing a response
-    , BodyP, iconv
+    , BodyP, iconv, traceBody
       -- * Raw transport function
     , runQuery
     ) where
@@ -23,8 +23,8 @@ import           Codec.Text.IConv (EncodingName, convertFuzzy, Fuzzy(Translitera
 import qualified Network.TLS.Extra as TLS
 
 import qualified Data.ByteString.Char8 as BS
-import           Data.ByteString.Lazy.Char8 (ByteString)
-
+import           Data.ByteString.Lazy.Char8 (ByteString, unpack)
+import Debug.Trace (trace)
 
 import Network.SOAP.Transport
 
@@ -77,6 +77,10 @@ runQuery manager url updateReq updateBody soapAction doc = do
 -- | Create an IConv-based processor.
 iconv :: EncodingName -> BodyP
 iconv src = convertFuzzy Transliterate src "UTF-8"
+
+-- | Show a debug dump of a response body.
+traceBody :: BodyP
+traceBody lbs = trace (unpack lbs) lbs
 
 -- | Load certificate, key and make a request processor setting them.
 clientCert :: FilePath -- ^ Path to a certificate.
