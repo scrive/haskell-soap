@@ -64,8 +64,8 @@ main = hspec $ do
                 t <- Mock.initTransport [ ("spam", saladHandler) ]
                 result <- invokeWS t "spam" () () $ StreamParser recipeParser
                 result `shouldBe` Recipe [ RecipeEntry "sausage" "some"
-                                         ,  RecipeEntry "bacon" "many"
-                                         ,  RecipeEntry "eggs" "2"
+                                         , RecipeEntry "bacon" "many"
+                                         , RecipeEntry "eggs" "2"
                                          ]
 
 saladHandler = Mock.handler $ \_ -> do
