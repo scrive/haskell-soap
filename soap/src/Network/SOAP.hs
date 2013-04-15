@@ -45,8 +45,8 @@ invokeWS transport soapAction header body parser = do
         RawParser func    -> return . func $ lbs
 
 unwrapEnvelopeSink :: Parser a -> Parser a
-unwrapEnvelopeSink sink = XSP.force "No SOAP Envelope" $ XSP.tagNoAttr "Envelope"
-                        $ XSP.force "No SOAP Body" $ XSP.tagNoAttr "Body"
+unwrapEnvelopeSink sink = XSP.force "No SOAP Envelope" $ XSP.tagNoAttr "{http://schemas.xmlsoap.org/soap/envelope/}Envelope"
+                        $ XSP.force "No SOAP Body" $ XSP.tagNoAttr "{http://schemas.xmlsoap.org/soap/envelope/}Body"
                         $ sink
 
 unwrapEnvelopeCursor :: Cursor -> Cursor

@@ -34,7 +34,9 @@ handler :: (ToXML a) => (Document -> IO a) -> Handler
 handler h doc = do
     result <- h doc
     return . renderLBS def
-           . document "Envelope"
-           . element "Body"
+           . document (sname "Envelope")
+           . element (sname "Body")
            . toXML
            $ result
+    where
+        sname n = Name n (Just "http://schemas.xmlsoap.org/soap/envelope/") (Just "soapenv")
