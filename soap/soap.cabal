@@ -59,6 +59,7 @@ library
     Network.SOAP.Transport.HTTP.Conduit
     Network.SOAP.Transport.Mock
     Network.SOAP.Parsing.Cursor
+    Network.SOAP.Parsing.Stream
   build-depends:
     base ==4.*,
     http-conduit, resourcet, tls-extra,
