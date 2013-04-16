@@ -9,7 +9,7 @@ module Network.SOAP.Transport.HTTP.Conduit
       initTransport, initTransport_
     , EndpointURL
       -- * Making a request
-    , RequestP, clientCert
+    , RequestP, clientCert, traceRequest
       -- * Processing a response
     , BodyP, iconv, traceBody
       -- * Raw transport function
@@ -80,7 +80,14 @@ iconv src = convertFuzzy Transliterate src "UTF-8"
 
 -- | Show a debug dump of a response body.
 traceBody :: BodyP
-traceBody lbs = trace (unpack lbs) lbs
+traceBody lbs = trace "response:" $ trace (unpack lbs) lbs
+
+-- | Show a debug dump of a request body.
+traceRequest :: RequestP
+traceRequest r = trace "request:" $ trace (showBody $ requestBody r) r
+    where
+        showBody (RequestBodyLBS body) = unpack body
+        showBody _ = "<dynamic body>"
 
 -- | Load certificate, key and make a request processor setting them.
 clientCert :: FilePath -- ^ Path to a certificate.
