@@ -49,7 +49,7 @@ readDict a c = extract . head $ c $/ a
     where
         extract cur = HM.fromList . mapMaybe dict . map node $ cur $| child
 
-        dict (NodeElement (Element (Name n _ _) _ [NodeContent c])) = Just (n, c)
+        dict (NodeElement (Element (Name n _ _) _ [NodeContent cont])) = Just (n, cont)
         dict (NodeElement (Element (Name n _ _) _ []))              = Just (n, T.empty)
         dict _                                                      = Nothing
 
