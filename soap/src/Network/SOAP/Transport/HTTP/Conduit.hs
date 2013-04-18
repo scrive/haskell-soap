@@ -18,15 +18,19 @@ module Network.SOAP.Transport.HTTP.Conduit
 
 import Text.XML
 import Network.HTTP.Conduit
+import Network.HTTP.Types(Status(..))
 import Control.Monad.Trans.Resource
 import           Codec.Text.IConv (EncodingName, convertFuzzy, Fuzzy(Transliterate))
 import qualified Network.TLS.Extra as TLS
 
 import qualified Data.ByteString.Char8 as BS
-import           Data.ByteString.Lazy.Char8 (ByteString, unpack)
+import           Data.ByteString.Lazy.Char8 (ByteString, unpack, fromChunks)
+
 import Debug.Trace (trace)
+import Control.Exception as E
 
 import Network.SOAP.Transport
+import Network.SOAP.Exception
 
 -- | Update request record after defaults and method-specific fields are set.
 type RequestP = Request (ResourceT IO) -> Request (ResourceT IO)
@@ -69,8 +73,23 @@ runQuery manager url updateReq updateBody soapAction doc = do
                                                , ("SOAPAction", BS.pack soapAction)
                                                ]
                            }
-    res <- runResourceT $ httpLbs (updateReq request') manager
+    res <- (runResourceT $ httpLbs (updateReq request') manager) `E.catch` handle500
     return . updateBody . responseBody $ res
+
+    where
+        handle500 :: HttpException -> IO a
+        handle500 e@(StatusCodeException (Status 500 _) hs) = handleSoapFault e hs
+        handle500 e = E.throw e
+
+        handleSoapFault e hs =
+            case lookup "X-Response-Body-Start" hs of
+                Nothing -> E.throw e
+                Just bs -> do
+                    case parseLBS def $ fromChunks [bs] of
+                        Left _ -> E.throw e
+                        Right sfdoc -> case extractSoapFault sfdoc of
+                            Nothing -> E.throw e
+                            Just sf -> E.throw sf
 
 -- * Some common processors.
 
