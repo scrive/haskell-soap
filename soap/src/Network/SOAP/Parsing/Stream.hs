@@ -13,6 +13,7 @@ module Network.SOAP.Parsing.Stream
     ( -- * Tags
       laxTag, flaxTag
       -- * Content
+    , laxContent, flaxContent
     , readContent, readTag
       -- * Types to use in custom parser sinks
     , Sink, Event
@@ -33,6 +34,12 @@ laxTag ln = XSP.tagPredicate ((== ln) . nameLocalName) XSP.ignoreAttrs . const
 -- | Non-maybe version of laxTag/tagNoAttr.
 flaxTag :: (MonadThrow m) => Text -> Sink Event m a -> Sink Event m a
 flaxTag ln s = XSP.force ("got no " ++ show ln) $ laxTag ln s
+
+laxContent :: (MonadThrow m) => Text -> Sink Event m (Maybe Text)
+laxContent ln = laxTag ln XSP.content
+
+flaxContent :: (MonadThrow m) => Text -> Sink Event m Text
+flaxContent ln = flaxTag ln XSP.content
 
 -- | Unpack and read a current tag content.
 readContent :: (Read a, MonadThrow m) => Sink Event m a
