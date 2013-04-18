@@ -28,7 +28,7 @@ runQuery :: [(String, Handler)] -> Transport
 runQuery handlers soapAction doc = do
     case lookup soapAction handlers of
         Nothing -> error $ "No handler for action " ++ soapAction
-        Just handler -> handler doc
+        Just h -> h doc
 
 -- | Process a Document and wrap result in a SOAP Envelope.
 handler :: (ToXML a) => (Document -> IO a) -> Handler

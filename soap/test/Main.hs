@@ -1,14 +1,17 @@
 {-# LANGUAGE OverloadedStrings #-}
 import Network.SOAP
+import Network.SOAP.Exception
 import Network.SOAP.Parsing.Cursor
+import Network.SOAP.Parsing.Stream
 import qualified Network.SOAP.Transport.Mock as Mock
 import qualified Network.SOAP.Transport.HTTP.Conduit as HTTP
 import Text.XML
 import Text.XML.Writer
-import Text.XML.Cursor hiding (element)
+import Text.XML.Cursor as Cur hiding (element)
 import Text.XML.Stream.Parse as Parse
 
-import Data.Text (Text)
+import           Data.Text (Text)
+import qualified Data.Text as T
 import qualified Data.HashMap.Strict as HM
 import qualified Data.ByteString.Lazy.Char8 as LBS
 
@@ -61,12 +64,47 @@ main = hspec $ do
                         return $ RecipeEntry (nameLocalName name) quantity
                     return $ Recipe ings
 
-                t <- Mock.initTransport [ ("spam", saladHandler) ]
+                t <- spamTransport
                 result <- invokeWS t "spam" () () $ StreamParser recipeParser
-                result `shouldBe` Recipe [ RecipeEntry "sausage" "some"
-                                         , RecipeEntry "bacon" "many"
-                                         , RecipeEntry "eggs" "2"
-                                         ]
+                result `shouldBe` saladRecipe
+
+            it "extracts using lax helpers" $ do
+                let recipeParser = flaxTag "salad" $ do
+                    s <- flaxContent "sausage"
+                    b <- laxContent "bacon"
+                    e <- readTag "eggs"
+                    return $ Recipe [ RecipeEntry "sausage" s
+                                    , RecipeEntry "bacon" $ maybe "" id b
+                                    , RecipeEntry "eggs" . T.pack $ show (e :: Int)
+                                    ]
+                result <- invokeSpam $ StreamParser recipeParser
+                result `shouldBe` saladRecipe
+
+        describe "DocumentParser" $ do
+            it "gives out raw document" $ do
+                let poach doc = read . T.unpack . T.concat
+                                     $ fromDocument doc
+                                     $// laxElement "eggs"
+                                     &/ Cur.content
+                t <- spamTransport
+                result <- invokeWS t "spam" () () $ DocumentParser poach
+                result `shouldBe` (2 :: Int)
+
+        describe "Exception" $ do
+            it "parses a SOAP Fault document" $ do
+                t <- Mock.initTransport [ ("crash", Mock.fault "soap:Server" "The server made a boo boo." "") ]
+                lbs <- t "crash" (document "request" empty)
+                let Just e = extractSoapFault . parseLBS_ def $ lbs
+                e `shouldBe` SOAPFault { faultCode = "soap:Server"
+                                       , faultString = "The server made a boo boo."
+                                       , faultDetail = ""
+                                       }
+
+invokeSpam parser = do
+    t <- spamTransport
+    invokeWS t "spam" () () parser
+
+spamTransport = Mock.initTransport [ ("spam", saladHandler) ]
 
 saladHandler = Mock.handler $ \_ -> do
     return . element "salad" $ do
@@ -76,3 +114,8 @@ saladHandler = Mock.handler $ \_ -> do
 
 data RecipeEntry = RecipeEntry Text Text deriving (Eq, Show)
 data Recipe = Recipe [RecipeEntry] deriving (Eq, Show)
+
+saladRecipe = Recipe [ RecipeEntry "sausage" "some"
+                     , RecipeEntry "bacon" "many"
+                     , RecipeEntry "eggs" "2"
+                     ]
