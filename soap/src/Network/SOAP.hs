@@ -22,9 +22,10 @@ import           Data.XML.Types (Event)
 import           Text.XML.Writer (ToXML, soap)
 
 -- | Different parsing modes available to extract reply contents.
-data ResponseParser a = StreamParser (Parser a)         -- ^ Streaming parser from Text.XML.Stream.Parse
-                      | CursorParser (XML.Cursor -> a)  -- ^ XPath-like parser from Text.XML.Cursor
-                      | RawParser (LBS.ByteString -> a) -- ^ Work with a raw bytestring.
+data ResponseParser a = StreamParser (Parser a)            -- ^ Streaming parser from Text.XML.Stream.Parse
+                      | CursorParser (XML.Cursor -> a)     -- ^ XPath-like parser from Text.XML.Cursor
+                      | DocumentParser (XML.Document -> a) -- ^ Parse raw XML document.
+                      | RawParser (LBS.ByteString -> a)    -- ^ Work with a raw bytestring.
 
 -- | Stream parser from Text.XML.Stream.Parse.
 type Parser a = Sink Event (ResourceT IO) a
@@ -42,6 +43,7 @@ invokeWS transport soapAction header body parser = do
     case parser of
         StreamParser sink -> runResourceT $ XSP.parseLBS def lbs $$ unwrapEnvelopeSink sink
         CursorParser func -> return . func . unwrapEnvelopeCursor . XML.fromDocument $ XML.parseLBS_ def lbs
+        DocumentParser func -> return . func $ XML.parseLBS_ def lbs
         RawParser func    -> return . func $ lbs
 
 unwrapEnvelopeSink :: Parser a -> Parser a
