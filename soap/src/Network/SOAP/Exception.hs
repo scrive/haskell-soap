@@ -1,6 +1,5 @@
 {-# LANGUAGE OverloadedStrings, DeriveDataTypeable #-}
 
--- | TBD
 module Network.SOAP.Exception
     ( SOAPFault(..)
     , extractSoapFault
@@ -12,7 +11,8 @@ import Text.XML (Document)
 import Text.XML.Cursor
 import qualified Data.Text as T
 
--- | TBD
+-- | Exception to be thrown when transport encounters an exception that is
+--   acutally a SOAP Fault.
 data SOAPFault = SOAPFault { faultCode   :: T.Text
                            , faultString :: T.Text
                            , faultDetail :: T.Text
@@ -20,6 +20,7 @@ data SOAPFault = SOAPFault { faultCode   :: T.Text
 
 instance Exception SOAPFault
 
+-- | Try to find a SOAP Fault in a document.
 extractSoapFault :: Document -> Maybe SOAPFault
 extractSoapFault doc =
     case cur' of
