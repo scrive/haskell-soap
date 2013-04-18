@@ -7,8 +7,10 @@ module Network.SOAP.Parsing.Cursor
       -- * Extract single element
       readT, readC
       -- * Extract from multiple elements
-    , readDict, Dict
+    , Dict, readDict, dictBy
     ) where
+
+import Network.SOAP (ResponseParser(CursorParser))
 
 import Text.XML
 import Text.XML.Cursor
@@ -50,3 +52,10 @@ readDict a c = extract . head $ c $/ a
         dict (NodeElement (Element (Name n _ _) _ [NodeContent c])) = Just (n, c)
         dict (NodeElement (Element (Name n _ _) _ []))              = Just (n, T.empty)
         dict _                                                      = Nothing
+
+-- | Simple parser to grab a flat response by an element name.
+--
+-- > result <- invokeWS … (dictBy "BigDataResult")
+-- > case HM.lookup "SuccessError" result of …
+dictBy :: T.Text -> ResponseParser Dict
+dictBy n = CursorParser . readDict $ anyElement &/ laxElement n
