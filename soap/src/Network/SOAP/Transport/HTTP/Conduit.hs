@@ -78,7 +78,7 @@ runQuery manager url updateReq updateBody soapAction doc = do
 
     where
         handle500 :: HttpException -> IO a
-        handle500 e@(StatusCodeException (Status 500 _) hs) = handleSoapFault e hs
+        handle500 e@(StatusCodeException (Status 500 _) hs _) = handleSoapFault e hs
         handle500 e = E.throw e
 
         handleSoapFault e hs =
