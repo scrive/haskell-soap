@@ -6,7 +6,7 @@
 module Network.SOAP.Transport.HTTP.Conduit
     (
       -- * Initialization
-      initTransport, initTransport_
+      initTransport, initTransport_, confTransport
     , EndpointURL
       -- * Making a request
     , RequestP, clientCert, traceRequest
@@ -20,14 +20,19 @@ import Text.XML
 import Network.HTTP.Conduit
 import Network.HTTP.Types(Status(..))
 import Control.Monad.Trans.Resource
+
+import           Data.Configurator (require, lookupDefault)
+import           Data.Configurator.Types (Config)
 import           Codec.Text.IConv (EncodingName, convertFuzzy, Fuzzy(Transliterate))
 import qualified Network.TLS.Extra as TLS
 
+import           Data.Text (Text)
 import qualified Data.ByteString.Char8 as BS
 import           Data.ByteString.Lazy.Char8 (ByteString, unpack, fromChunks)
 
 import Debug.Trace (trace)
 import Control.Exception as E
+import Data.Monoid ((<>))
 
 import Network.SOAP.Transport
 import Network.SOAP.Exception
@@ -55,6 +60,37 @@ initTransport url updateReq updateBody = do
 -- | Create a transport without any request and body processing.
 initTransport_ :: EndpointURL -> IO Transport
 initTransport_ url = initTransport url id id
+
+-- | Load common transport parameters from a configurator file.
+--
+-- > soap {
+-- >   url = "https://vendor.tld/service/"
+-- >   client_cert = "etc/client.pem"
+-- >   client_key = "etc/client.key"
+-- >   trace = true
+-- > }
+--
+-- Only url field is required.
+--
+-- > import Data.Configurator (load, Worth(Required))
+-- > main = do
+-- >     transport <- confTransport "soap" =<< load [Required "etc/example.conf"]
+confTransport :: Text -> Config -> IO Transport
+confTransport section conf = do
+    url <- require conf (section <> ".url")
+
+    cCert <- lookupDefault "" conf (section <> ".client_cert")
+    cKey <- lookupDefault "" conf (section <> ".client_key")
+    cc <- if null cCert
+              then return id
+              else clientCert cCert cKey
+
+    tracer <- lookupDefault False conf (section <> ".trace")
+    let (tr, tb) = if tracer
+                       then (traceRequest, traceBody)
+                       else (id, id)
+
+    initTransport url (tr . cc) tb
 
 -- | Render document, submit it as a POST request and retrieve a body.
 runQuery :: Manager
