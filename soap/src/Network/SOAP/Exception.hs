@@ -1,8 +1,8 @@
 {-# LANGUAGE OverloadedStrings, DeriveDataTypeable #-}
 
 module Network.SOAP.Exception
-    ( SOAPFault(..)
-    , extractSoapFault
+    ( SOAPParsingError(..)
+    , SOAPFault(..), extractSoapFault
     ) where
 
 import Control.Exception as E
@@ -10,6 +10,9 @@ import Data.Typeable
 import Text.XML (Document)
 import Text.XML.Cursor
 import qualified Data.Text as T
+
+data SOAPParsingError = SOAPParsingError String deriving (Show, Typeable)
+instance Exception SOAPParsingError
 
 -- | Exception to be thrown when transport encounters an exception that is
 --   acutally a SOAP Fault.
@@ -25,15 +28,13 @@ extractSoapFault :: Document -> Maybe SOAPFault
 extractSoapFault doc =
     case cur' of
         []    -> Nothing
-        cur:_ -> Just $ SOAPFault { faultCode   = code cur
-                                  , faultString = string cur
-                                  , faultDetail = detail cur
+        cur:_ -> Just $ SOAPFault { faultCode   = peek "faultcode" cur
+                                  , faultString = peek "faultstring" cur
+                                  , faultDetail = peek "detail" cur
                                   }
     where
         cur' = fromDocument doc $| laxElement "Envelope"
                                 &/ laxElement "Body"
                                 &/ laxElement "Fault"
 
-        code   cur = T.concat $ cur $/ laxElement "faultcode"   &/ content
-        string cur = T.concat $ cur $/ laxElement "faultstring" &/ content
-        detail cur = T.concat $ cur $/ laxElement "detail"      &/ content
+        peek name cur = T.concat $ cur $/ laxElement name &/ content
