@@ -3,12 +3,18 @@
 {-# LANGUAGE OverloadedStrings, Rank2Types, FlexibleContexts #-}
 module Network.SOAP
     (
+    -- * Requests
       invokeWS, Transport
+    -- * Response parsing
     , ResponseParser(..)
     , Parser
+    -- * Exceptions
+    , SOAPFault(..), SOAPParsingError(..)
     ) where
 
 import Network.SOAP.Transport (Transport)
+import Network.SOAP.Exception
+import qualified Control.Exception as E
 
 import Data.Conduit
 
@@ -20,6 +26,7 @@ import           Text.XML.Cursor as XML
 import qualified Text.XML.Stream.Parse as XSP
 import           Data.XML.Types (Event)
 import           Text.XML.Writer (ToXML, soap)
+import qualified Data.Text as T
 
 -- | Different parsing modes available to extract reply contents.
 data ResponseParser a = StreamParser (Parser a)            -- ^ Streaming parser from Text.XML.Stream.Parse
@@ -42,7 +49,7 @@ invokeWS transport soapAction header body parser = do
     lbs <- transport soapAction $! soap header body
     case parser of
         StreamParser sink -> runResourceT $ XSP.parseLBS def lbs $$ unwrapEnvelopeSink sink
-        CursorParser func -> return . func . unwrapEnvelopeCursor . XML.fromDocument $ XML.parseLBS_ def lbs
+        CursorParser func -> checkFault func . unwrapEnvelopeCursor . XML.fromDocument $ XML.parseLBS_ def lbs
         DocumentParser func -> return . func $ XML.parseLBS_ def lbs
         RawParser func    -> return . func $ lbs
 
@@ -53,5 +60,13 @@ unwrapEnvelopeSink sink = XSP.force "No SOAP Envelope" $ XSP.tagNoAttr "{http://
 
 unwrapEnvelopeCursor :: Cursor -> Cursor
 unwrapEnvelopeCursor c = forceCur $ c $| laxElement "Envelope" &/ laxElement "Body"
-    where forceCur [] = error "No SOAP Body"
+    where forceCur [] = E.throw $ SOAPParsingError "No SOAP Body"
           forceCur (x:_) = x
+
+checkFault :: (XML.Cursor -> a) -> Cursor -> IO a
+checkFault fun c = tryCur $ c $/ laxElement "Fault"
+    where
+        tryCur [] = return $! fun c
+        tryCur (f:_) = E.throwIO $ SOAPFault (peek "faultcode" f) (peek "faultstring" f) (peek "detail" f)
+
+        peek name cur = T.concat $! cur $/ laxElement name &/ content
