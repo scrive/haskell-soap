@@ -18,7 +18,6 @@ module Network.SOAP.Transport.HTTP.Conduit
 
 import Text.XML
 import Network.HTTP.Conduit
-import Network.HTTP.Types(Status(..))
 import Control.Monad.Trans.Resource
 
 import           Data.Configurator (require, lookupDefault)
@@ -28,14 +27,13 @@ import qualified Network.TLS.Extra as TLS
 
 import           Data.Text (Text)
 import qualified Data.ByteString.Char8 as BS
-import           Data.ByteString.Lazy.Char8 (ByteString, unpack, fromChunks)
+import           Data.ByteString.Lazy.Char8 (ByteString, unpack)
 
 import Debug.Trace (trace)
-import Control.Exception as E
+--import Control.Exception as E
 import Data.Monoid ((<>))
 
 import Network.SOAP.Transport
-import Network.SOAP.Exception
 
 -- | Update request record after defaults and method-specific fields are set.
 type RequestP = Request (ResourceT IO) -> Request (ResourceT IO)
@@ -108,24 +106,10 @@ runQuery manager url updateReq updateBody soapAction doc = do
                            , requestHeaders  = [ ("Content-Type", "text/xml; charset=utf-8")
                                                , ("SOAPAction", BS.pack soapAction)
                                                ]
+                           , checkStatus = \_ _ _ -> Nothing
                            }
-    res <- (runResourceT $ httpLbs (updateReq request') manager) `E.catch` handle500
+    res <- (runResourceT $ httpLbs (updateReq request') manager)
     return . updateBody . responseBody $ res
-
-    where
-        handle500 :: HttpException -> IO a
-        handle500 e@(StatusCodeException (Status 500 _) hs _) = handleSoapFault e hs
-        handle500 e = E.throw e
-
-        handleSoapFault e hs =
-            case lookup "X-Response-Body-Start" hs of
-                Nothing -> E.throw e
-                Just bs -> do
-                    case parseLBS def $ fromChunks [bs] of
-                        Left _ -> E.throw e
-                        Right sfdoc -> case extractSoapFault sfdoc of
-                            Nothing -> E.throw e
-                            Just sf -> E.throw sf
 
 -- * Some common processors.
 
