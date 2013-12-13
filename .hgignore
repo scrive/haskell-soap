@@ -5,4 +5,6 @@ cabal-dev/*
 out/*
 *.wsdl
 
+.cabal-sandbox
+cabal.sandbox.config
 soap.sublime-workspace
