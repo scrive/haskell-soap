@@ -1,0 +1,46 @@
+0.2.1.3:
+
+    * Cabal-only tweaks: remove -O2, add changelog.
+
+0.2.1.2:
+
+    + Add timeout option to confTransport.
+
+0.2.1.1:
+
+    ! Pin http-conduit version to 1.9.x.
+
+0.2.1.0:
+
+    * Throw SOAPParsingError instead of plain error.
+    * Update SOAPFault detection.
+
+0.2.0.4:
+
+    + Add configurator-based transport initialization.
+
+0.2.0.3:
+
+    ! Switch to a recent http-conduit version.
+
+0.2.0.2:
+
+    * Detect SOAPFault in response and throw a proper Exception.
+
+0.2.0.1:
+
+    + Tag content helpers for stream parsers.
+    + Dict helper for cursor parsers.
+    + Document-based parser for "medium rare" cursor parsers.
+    + Request and response tracing helpers.
+
+0.2:
+
+    * Switch to xml-conduit-writer for more clean serializers.
+    + Pluggable transports.
+    + Raw and streaming parsers.
+
+0.1:
+
+    Initial implementation, somewhat inflexible and warty,
+    but working with diverse services.
