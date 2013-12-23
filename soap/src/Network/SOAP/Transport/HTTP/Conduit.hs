@@ -66,6 +66,7 @@ initTransport_ url = initTransport url id id
 -- >   client_cert = "etc/client.pem"
 -- >   client_key = "etc/client.key"
 -- >   trace = true
+-- >   timeout = 15
 -- > }
 --
 -- Only url field is required.
@@ -88,7 +89,10 @@ confTransport section conf = do
                        then (traceRequest, traceBody)
                        else (id, id)
 
-    initTransport url (tr . cc) tb
+    timeout <- lookupDefault 15 conf (section <> ".timeout")
+    let to r = r { responseTimeout = Just (timeout * 1000000) }
+
+    initTransport url (to . tr . cc) tb
 
 -- | Render document, submit it as a POST request and retrieve a body.
 runQuery :: Manager
