@@ -3,13 +3,14 @@
 -- | A feature-rich http-conduit based transport allowing to deal with
 --   HTTPS, authentication and other stuff using request and body processors.
 
-module Network.SOAP.Transport.HTTP.Conduit
+module Network.SOAP.Transport.HTTP
     (
       -- * Initialization
-      initTransport, initTransport_, confTransport
+      initTransport, initTransport_
+    , confTransport, confTransportWith
     , EndpointURL
       -- * Making a request
-    , RequestP, clientCert, traceRequest
+    , RequestP, traceRequest -- clientCert
       -- * Processing a response
     , BodyP, iconv, traceBody
       -- * Raw transport function
@@ -17,13 +18,13 @@ module Network.SOAP.Transport.HTTP.Conduit
     ) where
 
 import Text.XML
-import Network.HTTP.Conduit
-import Control.Monad.Trans.Resource
+import Network.HTTP.Client
+-- import Control.Monad.Trans.Resource
 
-import           Data.Configurator (require, lookupDefault)
+import qualified Data.Configurator as Conf
 import           Data.Configurator.Types (Config)
 import           Codec.Text.IConv (EncodingName, convertFuzzy, Fuzzy(Transliterate))
-import qualified Network.TLS.Extra as TLS
+-- import qualified Network.TLS.Extra as TLS
 
 import           Data.Text (Text)
 import qualified Data.ByteString.Char8 as BS
@@ -36,7 +37,7 @@ import Data.Monoid ((<>))
 import Network.SOAP.Transport
 
 -- | Update request record after defaults and method-specific fields are set.
-type RequestP = Request (ResourceT IO) -> Request (ResourceT IO)
+type RequestP = Request -> Request
 
 -- | Process response body to make it a nice UTF8-encoded XML document.
 type BodyP = ByteString -> ByteString
@@ -45,26 +46,33 @@ type BodyP = ByteString -> ByteString
 --   dynamically with a request processor.
 type EndpointURL = String
 
--- | Create a http-conduit transport. Use identity transformers if you
+
+-- | Create a http-client transport. Use identity transformers if you
 --   don't need any special treatment.
 initTransport :: EndpointURL
               -> RequestP
               -> BodyP
               -> IO Transport
-initTransport url updateReq updateBody = do
-    manager <- newManager def
-    return $! runQuery manager url updateReq updateBody
+initTransport = initTransportWith defaultManagerSettings
 
 -- | Create a transport without any request and body processing.
 initTransport_ :: EndpointURL -> IO Transport
 initTransport_ url = initTransport url id id
 
+-- | Create a http-client transport using manager settings (for plugging tls etc.).
+initTransportWith :: ManagerSettings
+                  -> EndpointURL
+                  -> RequestP
+                  -> BodyP
+                  -> IO Transport
+initTransportWith settings url updateReq updateBody = do
+    manager <- newManager settings
+    return $! runQuery manager url updateReq updateBody
+
 -- | Load common transport parameters from a configurator file.
 --
 -- > soap {
 -- >   url = "https://vendor.tld/service/"
--- >   client_cert = "etc/client.pem"
--- >   client_key = "etc/client.key"
 -- >   trace = true
 -- >   timeout = 15
 -- > }
@@ -74,25 +82,32 @@ initTransport_ url = initTransport url id id
 -- > import Data.Configurator (load, Worth(Required))
 -- > main = do
 -- >     transport <- confTransport "soap" =<< load [Required "etc/example.conf"]
+
 confTransport :: Text -> Config -> IO Transport
-confTransport section conf = do
-    url <- require conf (section <> ".url")
+confTransport section conf = confTransportWith defaultManagerSettings section conf id id
 
-    cCert <- lookupDefault "" conf (section <> ".client_cert")
-    cKey <- lookupDefault "" conf (section <> ".client_key")
-    cc <- if null cCert
-              then return id
-              else clientCert cCert cKey
+-- | A more extensible transport parameter loader.
+confTransportWith :: ManagerSettings
+                  -> Text
+                  -> Config
+                  -> RequestP
+                  -> BodyP
+                  -> IO Transport
+confTransportWith settings section conf brp bbp = do
+    url <- Conf.require conf (section <> ".url")
 
-    tracer <- lookupDefault False conf (section <> ".trace")
+    tracer <- Conf.lookupDefault False conf (section <> ".trace")
     let (tr, tb) = if tracer
                        then (traceRequest, traceBody)
                        else (id, id)
 
-    timeout <- lookupDefault 15 conf (section <> ".timeout")
+    timeout <- Conf.lookupDefault 15 conf (section <> ".timeout")
     let to r = r { responseTimeout = Just (timeout * 1000000) }
 
-    initTransport url (to . tr . cc) tb
+    encoding <- Conf.lookup conf (section <> ".encoding")
+    let ic = maybe id iconv encoding
+
+    initTransportWith settings url (to . tr . brp) (tb . ic . bbp)
 
 -- | Render document, submit it as a POST request and retrieve a body.
 runQuery :: Manager
@@ -112,7 +127,7 @@ runQuery manager url updateReq updateBody soapAction doc = do
                                                ]
                            , checkStatus = \_ _ _ -> Nothing
                            }
-    res <- (runResourceT $ httpLbs (updateReq request') manager)
+    res <- httpLbs (updateReq request') manager
     return . updateBody . responseBody $ res
 
 -- * Some common processors.
@@ -132,6 +147,7 @@ traceRequest r = trace "request:" $ trace (showBody $ requestBody r) r
         showBody (RequestBodyLBS body) = unpack body
         showBody _ = "<dynamic body>"
 
+{-
 -- | Load certificate, key and make a request processor setting them.
 clientCert :: FilePath -- ^ Path to a certificate.
            -> FilePath -- ^ Path to a private key.
@@ -141,3 +157,4 @@ clientCert certPath keyPath = do
     pkey <- TLS.fileReadPrivateKey keyPath
 
     return $ \req -> req { clientCertificates = [(cert, Just pkey)] }
+-}

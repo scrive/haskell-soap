@@ -1,5 +1,5 @@
 name:                soap
-version:             0.2.1.3
+version:             0.2.2.0
 synopsis:            SOAP client tools
 description:
   Tools to build SOAP clients using xml-conduit.
@@ -50,15 +50,13 @@ library
     Network.SOAP
     Network.SOAP.Transport
     Network.SOAP.Exception
-    Network.SOAP.Transport.HTTP.Conduit
+    Network.SOAP.Transport.HTTP
     Network.SOAP.Transport.Mock
     Network.SOAP.Parsing.Cursor
     Network.SOAP.Parsing.Stream
   build-depends:
       base ==4.*
-    , http-conduit ==1.9.*
-    , resourcet
-    , tls-extra
+    , http-client >=0.2 && <0.3
     , http-types
 
     , configurator
