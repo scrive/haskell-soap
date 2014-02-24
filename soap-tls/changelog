@@ -1,3 +1,8 @@
+0.1.1:
+
+  + Server certificate validator can be specified for confTransport.
+  * Re-export default validator from X509.
+
 0.1:
 
   + Initial version.
