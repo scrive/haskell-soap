@@ -1,16 +1,13 @@
 {-# LANGUAGE OverloadedStrings #-}
 
--- | A feature-rich http-conduit based transport allowing to deal with
---   HTTPS, authentication and other stuff using request and body processors.
-
 module Network.SOAP.Transport.HTTP
     (
       -- * Initialization
-      initTransport, initTransport_
+      initTransport, initTransport_, initTransportWith
     , confTransport, confTransportWith
     , EndpointURL
       -- * Making a request
-    , RequestP, traceRequest -- clientCert
+    , RequestP, traceRequest
       -- * Processing a response
     , BodyP, iconv, traceBody
       -- * Raw transport function
@@ -146,15 +143,3 @@ traceRequest r = trace "request:" $ trace (showBody $ requestBody r) r
     where
         showBody (RequestBodyLBS body) = unpack body
         showBody _ = "<dynamic body>"
-
-{-
--- | Load certificate, key and make a request processor setting them.
-clientCert :: FilePath -- ^ Path to a certificate.
-           -> FilePath -- ^ Path to a private key.
-           -> IO RequestP
-clientCert certPath keyPath = do
-    cert <- TLS.fileReadCertificate certPath
-    pkey <- TLS.fileReadPrivateKey keyPath
-
-    return $ \req -> req { clientCertificates = [(cert, Just pkey)] }
--}
