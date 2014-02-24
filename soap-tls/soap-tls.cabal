@@ -1,7 +1,16 @@
 name:                soap-tls
 version:             0.1.1.0
 synopsis:            TLS-enabled SOAP transport (using tls package)
-description:         TLS-enabled SOAP transport (using tls package)
+description:
+  TLS-enabled SOAP transport (using tls package)
+  .
+  > main = do
+  >     -- Initial one-time preparations.
+  >     settings <- makeSettings (Just "client.crt") (Just "client.key") defaultValidator
+  >     transport <- initTransportWith settings "http://example.com/soap/endpoint" id (iconv "cp-1251")
+  >
+  >     -- the rest is the same as before...
+
 homepage:            https://bitbucket.org/dpwiz/haskell-soap
 license:             MIT
 license-file:        LICENSE
