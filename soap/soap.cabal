@@ -8,8 +8,7 @@ description:
   .
   > main = do
   >     -- Initial one-time preparations.
-  >     certP <- clientCert "priv/client.crt" "priv/client.key"
-  >     transport <- initTransport "https://example.com/soap/endpoint" certP (iconv "cp-1251")
+  >     transport <- initTransport "http://example.com/soap/endpoint" id (iconv "cp-1251")
   >
   >     -- Making queries
   >     activeStaff <- listStaff transport True
@@ -30,6 +29,8 @@ description:
   >         parsePerson = tagName "person" (requireAttr "age") $ \age -> do
   >                           name <- Parse.content
   >                           return $ Person name (read . unpack $ age)
+  .
+  Notice: to invoke HTTPS services you need to initialize a transport from soap-tls or soap-openssl.
 
 homepage:            https://bitbucket.org/dpwiz/haskell-soap
 license:             MIT
