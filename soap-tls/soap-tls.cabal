@@ -6,7 +6,7 @@ description:
   .
   > main = do
   >     -- Initial one-time preparations.
-  >     settings <- makeSettings (Just "client.crt") (Just "client.key") defaultValidator
+  >     settings <- makeSettings (Just "client.crt") (Just "client.key") validateDefault
   >     transport <- initTransportWith settings "http://example.com/soap/endpoint" id (iconv "cp-1251")
   >
   >     -- the rest is the same as before...
