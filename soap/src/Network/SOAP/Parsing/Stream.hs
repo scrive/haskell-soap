@@ -1,3 +1,4 @@
+{-# LANGUAGE CPP #-}
 -- | Collection of helpers to use with Text.XML.Stream.Parse parsers.
 --
 -- > let sink = flaxTag "MethodNameResponse"
@@ -19,6 +20,9 @@ module Network.SOAP.Parsing.Stream
     , Sink, Event
     ) where
 
+#if MIN_VERSION_conduit(1,1,0)
+import Control.Monad.Catch (MonadThrow)
+#endif
 import Data.Conduit
 import Data.XML.Types (Event)
 

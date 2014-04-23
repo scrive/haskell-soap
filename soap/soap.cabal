@@ -1,5 +1,5 @@
 name:                soap
-version:             0.2.2.1
+version:             0.2.2.2
 synopsis:            SOAP client tools
 description:
   Tools to build SOAP clients using xml-conduit.
@@ -66,6 +66,8 @@ library
     , xml-conduit
     , xml-types
     , conduit
+    , exceptions
+    , resourcet
     , data-default
 
     , text

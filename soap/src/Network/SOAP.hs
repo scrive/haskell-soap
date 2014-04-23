@@ -1,6 +1,6 @@
 -- | A heart of the package, 'invokeWS' assembles and executes requests.
 
-{-# LANGUAGE OverloadedStrings, Rank2Types, FlexibleContexts #-}
+{-# LANGUAGE CPP, OverloadedStrings, Rank2Types, FlexibleContexts #-}
 module Network.SOAP
     (
     -- * Requests
@@ -17,6 +17,9 @@ import Network.SOAP.Exception
 import qualified Control.Exception as E
 
 import Data.Conduit
+#if MIN_VERSION_conduit(1,1,0)
+import Control.Monad.Trans.Resource (runResourceT, ResourceT)
+#endif
 
 import qualified Data.ByteString.Lazy.Char8 as LBS
 
