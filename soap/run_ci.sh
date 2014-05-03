@@ -1,4 +1,4 @@
 while true; do
-    clear && cabal-dev build && $@
+    clear && cabal build && $@
     inotifywait -qq -e modify -r src/ test/ *.cabal
 done
