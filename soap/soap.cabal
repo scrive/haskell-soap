@@ -6,6 +6,16 @@ description:
   .
   A mildly-complicated example:
   .
+  > {-# LANGUAGE OverloadedStrings #-}
+  > import Network.SOAP
+  > import Network.SOAP.Transport.HTTP
+  >
+  > import Text.XML.Writer
+  > import Text.XML.Stream.Parse as Parse
+  > import           Data.Text (Text)
+  > import qualified Data.Text as T
+  >
+  > main :: IO ()
   > main = do
   >     -- Initial one-time preparations.
   >     transport <- initTransport "http://example.com/soap/endpoint" id (iconv "cp-1251")
@@ -15,7 +25,7 @@ description:
   >     print activeStaff
   >
   > data Person = Person Text Int deriving Show
-  > 
+  >
   > listStaff :: Transport -> Bool -> IO [Person]
   > listStaff t active = invokeWS t "urn:dummy:listStaff" () body parser
   >     where
@@ -28,7 +38,7 @@ description:
   >
   >         parsePerson = tagName "person" (requireAttr "age") $ \age -> do
   >                           name <- Parse.content
-  >                           return $ Person name (read . unpack $ age)
+  >                           return $ Person name (read . T.unpack $ age)
   .
   Notice: to invoke HTTPS services you need to initialize a transport from soap-tls or soap-openssl.
 
