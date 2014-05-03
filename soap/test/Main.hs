@@ -4,7 +4,7 @@ import Network.SOAP.Exception
 import Network.SOAP.Parsing.Cursor
 import Network.SOAP.Parsing.Stream
 import qualified Network.SOAP.Transport.Mock as Mock
-import qualified Network.SOAP.Transport.HTTP.Conduit as HTTP
+import qualified Network.SOAP.Transport.HTTP as HTTP
 import Text.XML
 import Text.XML.Writer
 import Text.XML.Cursor as Cur hiding (element)
