@@ -1,3 +1,7 @@
+0.1.1.1:
+
+  * Raise http-client upper boundary.
+
 0.1.1:
 
   + Server certificate validator can be specified for confTransport.
