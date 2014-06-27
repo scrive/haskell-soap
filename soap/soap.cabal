@@ -40,6 +40,8 @@ description:
   >                           return $ Person name (read . T.unpack $ age)
   .
   Notice: to invoke HTTPS services you need to initialize a transport from soap-tls or soap-openssl.
+  .
+  Full examples available at source repo: <https://bitbucket.org/dpwiz/haskell-soap/src/tip/soap/examples/>
 
 homepage:            https://bitbucket.org/dpwiz/haskell-soap
 license:             MIT
