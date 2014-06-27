@@ -1,60 +1,64 @@
 {-# LANGUAGE OverloadedStrings #-}
+
 import           Control.Applicative
-import           Text.Read
-import           Data.String
 import           Data.Text (Text)
 import qualified Data.Text as T
-import           Network.SOAP
-import           Network.SOAP.Transport.HTTP
-import           Text.XML.Writer
-import qualified Text.XML.Stream.Parse as P
 
-data Response = Response {
-  responseSuccess :: Bool
-, responseText :: Text
-, responseState :: Text
-, responseCity :: Text
-, responseWeatherStation :: Text
-, responseWeatherId :: Int
-, responseDescription :: Text
-, responseTemperature :: Int
-, responseRelativeHumidity :: Int
-, responseWind :: Text
-, responsePressure :: Text
-, responseVisibility :: Text
-, responseWindChill :: Text
-, responseRemarks :: Text
-} deriving (Eq, Show)
+import           Network.SOAP (invokeWS, Transport, ResponseParser(StreamParser))
+import           Network.SOAP.Transport.HTTP (initTransport)
+import           Network.SOAP.Parsing.Stream (flaxTag, flaxContent, readTag)
+import           Text.XML.Writer (elementA, element)
+
+data Response = Response { rSuccess :: Bool
+                         , rText :: Text
+                         , rState :: Text
+                         , rCity :: Text
+                         , rWatherStation :: Text
+                         , rWeatherId :: Int
+                         , rDescription :: Text
+                         , rTemperature :: Int
+                         , rRelativeHumidity :: Int
+                         , rWind :: Text
+                         , rPressure :: Text
+                         , rVisibility :: Text
+                         , rWindChill :: Text
+                         , rRemarks :: Text
+                         } deriving (Show)
 
 main :: IO ()
 main = do
-  transport <- initTransport "http://wsf.cdyne.com/WeatherWS/Weather.asmx" id id
-  invokeWS transport "http://ws.cdyne.com/WeatherWS/GetCityWeatherByZIP" () requestBody (StreamParser responseParser) >>= print
+    transport <- initTransport "http://wsf.cdyne.com/WeatherWS/Weather.asmx" id id
+    response <- getWeather transport "10007"
+    print response
 
-requestBody :: XML
-requestBody =
-    elementA "GetCityWeatherByZIP" [("xmlns", "http://ws.cdyne.com/WeatherWS/")]
-  $ element "ZIP" ("10007" :: Text)
-
-responseParser :: Parser Response
-responseParser = tag "GetCityWeatherByZIPResponse" $ tag "GetCityWeatherByZIPResult" response
+getWeather :: Transport -> Text -> IO Response
+getWeather t zip = invokeWS t url () body parser
   where
+    url = "http://ws.cdyne.com/WeatherWS/GetCityWeatherByZIP"
+    -- To prevent xml-conduit renderer from nulling children namespaces you have to either
+    -- set parent NS as an attribute (like here) or make your own element wrapper that
+    -- will force namespace to its name (correct).
+    -- Some servers will accept ns-nulled (<child xmlns="">) elements, but some wouldn't.
+    body = elementA "GetCityWeatherByZIP" [("xmlns", "http://ws.cdyne.com/WeatherWS/")]
+         $ element "ZIP" zip
+
+    parser = StreamParser
+           . flaxTag "GetCityWeatherByZIPResponse"
+           . flaxTag "GetCityWeatherByZIPResult"
+           $ response
+
     response = Response
-      <$> tagContentAsBool "Success"
-      <*> tagContent "ResponseText"
-      <*> tagContent "State"
-      <*> tagContent "City"
-      <*> tagContent "WeatherStationCity"
-      <*> tagContentAsInt "WeatherID"
-      <*> tagContent "Description"
-      <*> tagContentAsInt "Temperature"
-      <*> tagContentAsInt "RelativeHumidity"
-      <*> tagContent "Wind"
-      <*> tagContent "Pressure"
-      <*> tagContent "Visibility"
-      <*> tagContent "WindChill"
-      <*> tagContent "Remarks"
-    tag name = P.force ("no " ++ name) . P.tagNoAttr (fromString $ "{http://ws.cdyne.com/WeatherWS/}" ++ name)
-    tagContent name = tag name P.content
-    tagContentAsInt name = (P.force ("invalid " ++ name) $ readMaybe . T.unpack <$> tagContent name)
-    tagContentAsBool = fmap (== "true") . tagContent
+            <$> fmap (== "true") (flaxContent "Success")
+            <*> flaxContent "ResponseText"
+            <*> flaxContent "State"
+            <*> flaxContent "City"
+            <*> flaxContent "WeatherStationCity"
+            <*> readTag     "WeatherID"
+            <*> flaxContent "Description"
+            <*> readTag     "Temperature"
+            <*> readTag     "RelativeHumidity"
+            <*> flaxContent "Wind"
+            <*> flaxContent "Pressure"
+            <*> flaxContent "Visibility"
+            <*> flaxContent "WindChill"
+            <*> flaxContent "Remarks"
