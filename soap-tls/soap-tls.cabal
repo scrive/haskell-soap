@@ -27,11 +27,11 @@ library
   ghc-options:         -Wall
   exposed-modules:     Network.SOAP.Transport.HTTP.TLS
   build-depends:       base >=4.6 && <5
-                     , soap >= 0.2.2 && < 0.3
-                     , http-client >= 0.2 && < 0.5
-                     , http-client-tls >= 0.2 && < 0.3
-                     , tls >= 1.2 && < 2
-                     , connection >= 0.2 && < 0.3
+                     , soap >= 0.2.2
+                     , http-client >= 0.2
+                     , http-client-tls >= 0.2
+                     , tls >= 1.2
+                     , connection >= 0.2
                      , x509
                      , x509-store
                      , x509-validation

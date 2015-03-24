@@ -1,3 +1,7 @@
+0.2.2.5:
+
+    * Drop upper bounds entirely.
+
 0.2.2.4:
 
     ! Haddock breaks on LANGUAGE in example.
