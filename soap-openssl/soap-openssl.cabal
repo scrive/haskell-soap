@@ -28,8 +28,8 @@ library
   exposed-modules:     Network.SOAP.Transport.HTTP.OpenSSL
   build-depends:       base >=4.6 && <5
                      , soap >= 0.2.2 && < 0.3
-                     , http-client >= 0.2 && < 0.4
-                     , http-client-openssl >= 0.2 && < 0.3
+                     , http-client
+                     , http-client-openssl
                      , HsOpenSSL
                      , text
                      , configurator
