@@ -1,8 +1,10 @@
-dist/*
-cabal-dev/*
 out/*
 *.wsdl
+soap.sublime-workspace
 
+.stack-work
+dist
+
+cabal.config
 .cabal-sandbox
 cabal.sandbox.config
-soap.sublime-workspace
