@@ -1,3 +1,7 @@
+0.2.2.6:
+
+    * Extract parser runner. `invokeWS` now is a mere default pipeline.
+
 0.2.2.5:
 
     * Drop upper bounds entirely.

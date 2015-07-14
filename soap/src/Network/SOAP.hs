@@ -1,6 +1,6 @@
 -- | A heart of the package, 'invokeWS' assembles and executes requests.
 
-{-# LANGUAGE CPP, OverloadedStrings, Rank2Types, FlexibleContexts #-}
+{-# LANGUAGE BangPatterns, CPP, OverloadedStrings, Rank2Types, FlexibleContexts #-}
 module Network.SOAP
     (
     -- * Requests
@@ -48,13 +48,28 @@ invokeWS :: (ToXML h, ToXML b)
          -> b                -- ^ SOAP Body element.
          -> ResponseParser a -- ^ Parser to use on a request reply.
          -> IO a
-invokeWS transport soapAction header body parser = do
-    lbs <- transport soapAction $! soap header body
+invokeWS transport soapAction header body parser =
+    transport soapAction doc >>= runResponseParser parser
+  where
+    !doc = soap header body
+
+runResponseParser :: ResponseParser a -> LBS.ByteString -> IO a
+runResponseParser parser lbs =
     case parser of
-        StreamParser sink -> runResourceT $ XSP.parseLBS def lbs $$ unwrapEnvelopeSink sink
-        CursorParser func -> checkFault func . unwrapEnvelopeCursor . XML.fromDocument $ XML.parseLBS_ def lbs
-        DocumentParser func -> return . func $ XML.parseLBS_ def lbs
-        RawParser func    -> return . func $ lbs
+        StreamParser sink ->
+            runResourceT $
+                XSP.parseLBS def lbs $$ unwrapEnvelopeSink sink
+
+        CursorParser func ->
+            checkFault func . unwrapEnvelopeCursor
+                            . XML.fromDocument
+                            $ XML.parseLBS_ def lbs
+
+        DocumentParser func ->
+            return . func $ XML.parseLBS_ def lbs
+
+        RawParser func ->
+            return . func $ lbs
 
 unwrapEnvelopeSink :: Parser a -> Parser a
 unwrapEnvelopeSink sink = XSP.force "No SOAP Envelope" $ XSP.tagNoAttr "{http://schemas.xmlsoap.org/soap/envelope/}Envelope"
