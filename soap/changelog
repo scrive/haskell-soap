@@ -1,3 +1,7 @@
+0.2.2.7:
+
+    ! Add missing export for parser runner.
+
 0.2.2.6:
 
     * Extract parser runner. `invokeWS` now is a mere default pipeline.

@@ -6,6 +6,7 @@ module Network.SOAP
     -- * Requests
       invokeWS, Transport
     -- * Response parsing
+    , runResponseParser
     , ResponseParser(..)
     , Parser
     -- * Exceptions
