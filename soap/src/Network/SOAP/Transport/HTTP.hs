@@ -3,46 +3,52 @@
 module Network.SOAP.Transport.HTTP
     (
       -- * Initialization
-      initTransport, initTransport_, initTransportWith
-    , confTransport, confTransportWith
+      initTransportWithM
     , EndpointURL
       -- * Making a request
-    , RequestP, traceRequest
+    , RequestProc, printRequest
       -- * Processing a response
-    , BodyP, iconv, traceBody
+    , BodyProc, printBody
       -- * Raw transport function
+    , runQueryM
+      -- * Deprecated
+    , initTransport, initTransport_, initTransportWith
+    , confTransport, confTransportWith
+    , RequestP, traceRequest
+    , BodyP, iconv, traceBody
     , runQuery
     ) where
 
 import Text.XML
 import Network.HTTP.Client
--- import Control.Monad.Trans.Resource
 
 import qualified Data.Configurator as Conf
 import           Data.Configurator.Types (Config)
 import           Codec.Text.IConv (EncodingName, convertFuzzy, Fuzzy(Transliterate))
--- import qualified Network.TLS.Extra as TLS
 
 import           Data.Text (Text)
 import qualified Data.ByteString.Char8 as BS
+import qualified Data.ByteString.Lazy.Char8 as BSL
 import           Data.ByteString.Lazy.Char8 (ByteString, unpack)
 
 import Debug.Trace (trace)
---import Control.Exception as E
 import Data.Monoid ((<>))
 
 import Network.SOAP.Transport
 
 -- | Update request record after defaults and method-specific fields are set.
+type RequestProc = Request -> IO Request
+
 type RequestP = Request -> Request
 
 -- | Process response body to make it a nice UTF8-encoded XML document.
+type BodyProc = ByteString -> IO ByteString
+
 type BodyP = ByteString -> ByteString
 
 -- | Web service URL. Configured at initialization, but you can tweak it
 --   dynamically with a request processor.
 type EndpointURL = String
-
 
 -- | Create a http-client transport. Use identity transformers if you
 --   don't need any special treatment.
@@ -56,7 +62,6 @@ initTransport = initTransportWith defaultManagerSettings
 initTransport_ :: EndpointURL -> IO Transport
 initTransport_ url = initTransport url id id
 
--- | Create a http-client transport using manager settings (for plugging tls etc.).
 initTransportWith :: ManagerSettings
                   -> EndpointURL
                   -> RequestP
@@ -65,6 +70,16 @@ initTransportWith :: ManagerSettings
 initTransportWith settings url updateReq updateBody = do
     manager <- newManager settings
     return $! runQuery manager url updateReq updateBody
+
+-- | Create a http-client transport using manager settings (for plugging tls etc.).
+initTransportWithM :: ManagerSettings
+                   -> EndpointURL
+                   -> RequestProc
+                   -> BodyProc
+                   -> IO Transport
+initTransportWithM settings url requestProc bodyProc = do
+    manager <- newManager settings
+    return $! runQueryM manager url requestProc bodyProc
 
 -- | Load common transport parameters from a configurator file.
 --
@@ -106,26 +121,35 @@ confTransportWith settings section conf brp bbp = do
 
     initTransportWith settings url (to . tr . brp) (tb . ic . bbp)
 
--- | Render document, submit it as a POST request and retrieve a body.
 runQuery :: Manager
          -> EndpointURL
          -> RequestP
          -> BodyP
          -> Transport
-runQuery manager url updateReq updateBody soapAction doc = do
+runQuery manager url updateReq updateBody =
+    runQueryM manager url (pure . updateReq) (pure . updateBody)
+
+-- | Render document, submit it as a POST request and retrieve a body.
+runQueryM :: Manager
+          -> EndpointURL
+          -> RequestProc
+          -> BodyProc
+          -> Transport
+runQueryM manager url requestProc bodyProc soapAction doc = do
     let body = renderLBS def $! doc
 
     request <- parseUrl url
-    let request' = request { method          = "POST"
-                           , responseTimeout = Just 15000000
-                           , requestBody     = RequestBodyLBS body
-                           , requestHeaders  = [ ("Content-Type", "text/xml; charset=utf-8")
-                                               , ("SOAPAction", BS.pack soapAction)
-                                               ]
-                           , checkStatus = \_ _ _ -> Nothing
-                           }
-    res <- httpLbs (updateReq request') manager
-    return . updateBody . responseBody $ res
+    request' <- requestProc request
+        { method          = "POST"
+        , responseTimeout = Just 15000000
+        , requestBody     = RequestBodyLBS body
+        , requestHeaders  = [ ("Content-Type", "text/xml; charset=utf-8")
+                            , ("SOAPAction", BS.pack soapAction)
+                            ]
+        , checkStatus = \_ _ _ -> Nothing
+        }
+
+    httpLbs request' manager >>= bodyProc . responseBody
 
 -- * Some common processors.
 
@@ -137,9 +161,25 @@ iconv src = convertFuzzy Transliterate src "UTF-8"
 traceBody :: BodyP
 traceBody lbs = trace "response:" $ trace (unpack lbs) lbs
 
+printBody :: BodyProc
+printBody lbs = do
+    BSL.putStrLn $ "response:" <> lbs
+    pure lbs
+
 -- | Show a debug dump of a request body.
 traceRequest :: RequestP
 traceRequest r = trace "request:" $ trace (showBody $ requestBody r) r
     where
         showBody (RequestBodyLBS body) = unpack body
         showBody _ = "<dynamic body>"
+
+printRequest :: RequestProc
+printRequest req = do
+    BSL.putStrLn $ "request:" <> bslBody (requestBody req)
+    pure req
+    where
+        bslBody (RequestBodyLBS body) = body
+        bslBody _ = "<dynamic body>"
+
+{-# DEPRECATED initTransportWith, RequestP, traceRequest, BodyP, traceBody, runQuery "Processors were lifted to IO." #-}
+

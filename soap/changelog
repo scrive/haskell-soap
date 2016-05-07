@@ -1,3 +1,8 @@
+0.2.3.0:
+
+    + Add monadic request and response processors.
+    * Deprecate pure processors.
+
 0.2.2.7:
 
     ! Add missing export for parser runner.
