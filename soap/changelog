@@ -1,3 +1,7 @@
+0.2.3.1:
+
+    * Sprinkle some CPP to prepare for next http-client.
+
 0.2.3.0:
 
     + Add monadic request and response processors.

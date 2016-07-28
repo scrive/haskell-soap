@@ -1,3 +1,4 @@
+{-# LANGUAGE CPP #-}
 {-# LANGUAGE OverloadedStrings #-}
 
 module Network.SOAP.Transport.HTTP
@@ -114,7 +115,11 @@ confTransportWith settings section conf brp bbp = do
                        else (id, id)
 
     timeout <- Conf.lookupDefault 15 conf (section <> ".timeout")
+#if MIN_VERSION_http_client(0,5,0)
+    let to r = r { responseTimeout = responseTimeoutMicro (timeout * 1000000) }
+#else
     let to r = r { responseTimeout = Just (timeout * 1000000) }
+#endif
 
     encoding <- Conf.lookup conf (section <> ".encoding")
     let ic = maybe id iconv encoding
@@ -137,16 +142,23 @@ runQueryM :: Manager
           -> Transport
 runQueryM manager url requestProc bodyProc soapAction doc = do
     let body = renderLBS def $! doc
-
+#if MIN_VERSION_http_client(0,4,3)
+    request <- parseRequest url
+#else
     request <- parseUrl url
+#endif
     request' <- requestProc request
         { method          = "POST"
-        , responseTimeout = Just 15000000
         , requestBody     = RequestBodyLBS body
         , requestHeaders  = [ ("Content-Type", "text/xml; charset=utf-8")
                             , ("SOAPAction", BS.pack soapAction)
                             ]
+#if MIN_VERSION_http_client(0,5,0)
+        , responseTimeout = responseTimeoutMicro 15000000
+#else
+        , responseTimeout = Just 15000000
         , checkStatus = \_ _ _ -> Nothing
+#endif
         }
 
     httpLbs request' manager >>= bodyProc . responseBody
