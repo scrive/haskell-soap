@@ -32,8 +32,10 @@ import qualified Data.ByteString.Char8 as BS
 import qualified Data.ByteString.Lazy.Char8 as BSL
 import           Data.ByteString.Lazy.Char8 (ByteString, unpack)
 
+import Control.Applicative
 import Debug.Trace (trace)
 import Data.Monoid ((<>))
+import Prelude
 
 import Network.SOAP.Transport
 

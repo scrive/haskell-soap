@@ -1,5 +1,5 @@
 name:                soap
-version:             0.2.3.1
+version:             0.2.3.2
 synopsis:            SOAP client tools
 description:
   Tools to build SOAP clients using xml-conduit.
